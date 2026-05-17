@@ -10,4 +10,5 @@ treasury-analytics/warehouse/*.duckdb
 treasury-analytics/warehouse/*.duckdb-shm
 treasury-analytics/warehouse/*.duckdb-wal
 treasury_mock_output/
+.git_backup_*/
 .DS_Store
