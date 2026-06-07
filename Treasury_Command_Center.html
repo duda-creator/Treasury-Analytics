@@ -1,0 +1,420 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.db{background:#f4f4f4;min-height:100vh}
+.topbar{background:#002855;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px}
+.jpm-logo{display:flex;align-items:center;gap:10px}
+.jpm-wordmark{display:flex;flex-direction:column;line-height:1}
+.jpm-name{font-size:13px;font-weight:500;color:#fff;letter-spacing:0.02em}
+.jpm-sub{font-size:9px;color:rgba(255,255,255,0.6);letter-spacing:0.08em;text-transform:uppercase}
+.jpm-octagon{width:30px;height:30px;background:#fff;clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);display:flex;align-items:center;justify-content:center}
+.jpm-oct-inner{font-size:11px;font-weight:500;color:#002855;letter-spacing:-0.5px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.mockup-badge{background:rgba(255,255,255,0.15);border:0.5px solid rgba(255,255,255,0.3);border-radius:4px;padding:3px 8px;font-size:10px;color:rgba(255,255,255,0.8);letter-spacing:0.06em;text-transform:uppercase}
+.topbar-meta{font-size:11px;color:rgba(255,255,255,0.6)}
+.scen-btn{padding:3px 9px;font-size:11px;border:0.5px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;background:transparent;color:rgba(255,255,255,0.7)}
+.scen-btn.active{background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.6)}
+.nav{display:flex;gap:0;background:#001e42;padding:0 16px;overflow-x:auto;border-bottom:1px solid rgba(255,255,255,0.08)}
+.nav-tab{padding:9px 14px;font-size:12px;color:rgba(255,255,255,0.55);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color 0.15s}
+.nav-tab:hover{color:rgba(255,255,255,0.85)}
+.nav-tab.active{color:#fff;border-bottom:2px solid #D4A843}
+.page{display:none;padding:14px 16px}
+.page.active{display:block}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:0.5px solid #ddd;border-top:2px solid #002855;border-radius:4px;padding:10px 12px}
+.kpi-label{font-size:11px;color:#666;margin-bottom:4px}
+.kpi-val{font-size:20px;font-weight:500;color:#1a1a1a}
+.kpi-delta{font-size:11px;margin-top:2px}
+.kpi-delta.up{color:#2e7d32}.kpi-delta.down{color:#c62828}.kpi-delta.neu{color:#666}
+.rag-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.g{background:#2e7d32}.a{background:#e65100}.r{background:#c62828}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.card{background:#fff;border:0.5px solid #ddd;border-radius:4px;padding:12px 14px}
+.card-title{font-size:11px;font-weight:500;color:#002855;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e8e8e8;padding-bottom:6px}
+.chart-wrap{position:relative;width:100%}
+.limits-table{width:100%;border-collapse:collapse;font-size:12px}
+.limits-table th{font-size:10px;font-weight:500;color:#002855;text-align:left;padding:6px 8px;border-bottom:1.5px solid #002855;background:#f8f9fa}
+.limits-table td{padding:6px 8px;border-bottom:0.5px solid #eee;color:#1a1a1a}
+.badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:10px;font-weight:500}
+.badge-g{background:#e8f5e9;color:#1b5e20}.badge-a{background:#fff3e0;color:#bf360c}.badge-r{background:#ffebee;color:#b71c1c}
+.spark{display:flex;align-items:flex-end;gap:2px;height:28px}
+.spark span{width:6px;border-radius:1px 1px 0 0;background:#b5d4f4;flex-shrink:0}
+.spark span.hi{background:#002855}
+.mini-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.mini-bar-label{width:80px;color:#666;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-bar-track{flex:1;height:8px;background:#f0f0f0;border-radius:2px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:2px}
+.mini-bar-pct{width:36px;text-align:right;color:#1a1a1a;font-size:11px}
+.waterfall-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px}
+.wf-label{width:110px;font-size:11px;color:#555}
+.wf-bar-wrap{flex:1;position:relative;height:14px}
+.wf-bar{height:100%;border-radius:1px;position:absolute}
+.wf-val{width:50px;font-size:11px;text-align:right;color:#1a1a1a}
+.rag-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rag-item{background:#fff;border:0.5px solid #ddd;border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.rag-item-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.04em}
+.rag-item-val{font-size:15px;font-weight:500;color:#1a1a1a}
+.rag-item-limit{font-size:10px;color:#999}
+.rag-left{border-left:3px solid}
+.rag-left.g{border-color:#2e7d32}.rag-left.a{border-color:#e65100}.rag-left.r{border-color:#c62828}
+.divider-rule{height:1px;background:#e0e0e0;margin:14px 0}
+.footer-bar{background:#001e42;color:rgba(255,255,255,0.4);font-size:10px;padding:8px 20px;display:flex;justify-content:space-between;letter-spacing:0.02em}
+</style>
+
+<h2 class="sr-only">Demo Bank Treasury command center mockup for daily and intraday monitoring</h2>
+
+<div class="db">
+
+<div class="topbar">
+  <div class="jpm-logo">
+    <div class="jpm-octagon"><div class="jpm-oct-inner">DB</div></div>
+    <div class="jpm-wordmark">
+      <span class="jpm-name">Demo Bank</span>
+      <span class="jpm-sub">Treasury Risk Command Center</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="mockup-badge">Mockup only — not real data</span>
+    <span class="topbar-meta">03 Jun 2026 · Daily + Intraday · CIB Treasury</span>
+    <div style="display:flex;gap:4px">
+      <div class="scen-btn active">Base</div>
+      <div class="scen-btn">Adverse</div>
+      <div class="scen-btn">Severe</div>
+    </div>
+  </div>
+</div>
+
+<div class="nav" id="nav">
+  <div class="nav-tab active" data-page="p0">Intraday command</div>
+  <div class="nav-tab" data-page="p1">Rates &amp; FX</div>
+  <div class="nav-tab" data-page="p2">Liquidity runway</div>
+  <div class="nav-tab" data-page="p3">Funding &amp; deposits</div>
+  <div class="nav-tab" data-page="p4">Capital &amp; issuance</div>
+  <div class="nav-tab" data-page="p5">FTP &amp; NII run-rate</div>
+  <div class="nav-tab" data-page="p6">Limits &amp; live alerts</div>
+</div>
+
+<!-- PAGE 0 -->
+<div class="page active" id="p0">
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Intraday liquidity used</div><div class="kpi-val">$6.2B</div><div class="kpi-delta neu">Peak $7.1B at 11:30 ET</div></div>
+    <div class="kpi"><div class="kpi-label">LCR nowcast (14:00 ET)</div><div class="kpi-val">134%</div><div class="kpi-delta up">▲ 2pp vs open</div></div>
+    <div class="kpi"><div class="kpi-label">Net stressed outflow today</div><div class="kpi-val">$8.9B</div><div class="kpi-delta neu">44% of 30D stress cap</div></div>
+    <div class="kpi"><div class="kpi-label">Treasury non-trading VaR (1D)</div><div class="kpi-val">$34.1M</div><div class="kpi-delta neu">Limit $47.0M</div></div>
+    <div class="kpi"><div class="kpi-label">CET1 management buffer</div><div class="kpi-val">+260bps</div><div class="kpi-delta up">vs 11.5% requirement</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">RAG status — daily and intraday controls</div>
+      <div class="rag-grid">
+        <div class="rag-item rag-left g"><div class="rag-item-label">LCR nowcast</div><div class="rag-item-val">134%</div><div class="rag-item-limit">Daily floor 110%</div></div>
+        <div class="rag-item rag-left g"><div class="rag-item-label">NSFR monitor</div><div class="rag-item-val">121%</div><div class="rag-item-limit">Daily floor 100%</div></div>
+        <div class="rag-item rag-left a"><div class="rag-item-label">Top-5 dep concentration</div><div class="rag-item-val">16.8%</div><div class="rag-item-limit">Limit 15%</div></div>
+        <div class="rag-item rag-left g"><div class="rag-item-label">Intraday throughput</div><div class="rag-item-val">$7.4T</div><div class="rag-item-limit">No queue breach</div></div>
+        <div class="rag-item rag-left a"><div class="rag-item-label">Duration gap</div><div class="rag-item-val">2.6 yrs</div><div class="rag-item-limit">Limit 2.5 yrs</div></div>
+        <div class="rag-item rag-left g"><div class="rag-item-label">Cross-currency basis</div><div class="rag-item-val">-$9.8M/bp</div><div class="rag-item-limit">Limit -$12M/bp</div></div>
+        <div class="rag-item rag-left g"><div class="rag-item-label">TLAC surplus</div><div class="rag-item-val">$91B</div><div class="rag-item-limit">Min $60B</div></div>
+        <div class="rag-item rag-left r"><div class="rag-item-label">Severe stress CET1</div><div class="rag-item-val">7.6%</div><div class="rag-item-limit">Floor 10.5%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Intraday liquidity buffer trajectory (ET)</div>
+      <div class="chart-wrap" style="height:170px"><canvas id="nimChart" role="img" aria-label="Intraday liquidity buffer trend">Liquidity buffer trend from open to close.</canvas></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Today's stressed outflow composition</div>
+      <div class="chart-wrap" style="height:160px"><canvas id="bsChart" role="img" aria-label="Outflow composition donut">Wholesale outflow 41%, derivative margin 24%, drawdowns 20%, settlements 15%.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Live risk commentary</div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
+        <div style="display:flex;gap:8px;align-items:flex-start"><span class="rag-dot r"></span><div><div style="font-size:12px;font-weight:500;color:#1a1a1a">Severe stress capital shortfall persists</div><div style="font-size:11px;color:#666">Daily severe scenario implies CET1 at 7.6%, below the 10.5% floor; issuance and RWA mitigation actions remain tagged critical.</div></div></div>
+        <div style="display:flex;gap:8px;align-items:flex-start"><span class="rag-dot a"></span><div><div style="font-size:12px;font-weight:500;color:#1a1a1a">Wholesale concentration elevated intraday</div><div style="font-size:11px;color:#666">Top-5 counterparties reached 16.8% of funding by noon due to concentration in CIB operating balances.</div></div></div>
+        <div style="display:flex;gap:8px;align-items:flex-start"><span class="rag-dot g"></span><div><div style="font-size:12px;font-weight:500;color:#1a1a1a">Payment systems running within tolerance</div><div style="font-size:11px;color:#666">Fedwire and CHIPS queues remained below triggers; max intraday usage stayed below 85% of committed central bank and secured lines.</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 1 -->
+<div class="page" id="p1">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="kpi-label">IRR DV01 (banking book)</div><div class="kpi-val" style="color:#e65100">-$4.8M</div><div class="kpi-delta neu">Limit: +/-$6.0M</div></div>
+    <div class="kpi"><div class="kpi-label">NII sensitivity (-100bp)</div><div class="kpi-val">-$2.4B</div><div class="kpi-delta neu">Annualized disclosure proxy</div></div>
+    <div class="kpi"><div class="kpi-label">XCCY basis sensitivity (1bp)</div><div class="kpi-val">-$11.0M</div><div class="kpi-delta neu">Limit: -$12.0M</div></div>
+    <div class="kpi"><div class="kpi-label">Hedge effectiveness (today)</div><div class="kpi-val">93.4%</div><div class="kpi-delta up">Target >= 90%</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Daily NII-at-risk ladder by rate shock ($M)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="niiChart" role="img" aria-label="Daily NII sensitivity bar chart">Daily NII impact across shock scenarios.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Intraday key-rate DV01 by tenor ($M per bp)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="eveChart" role="img" aria-label="Key-rate DV01 bar chart">DV01 by tenor bucket.</canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Hourly FX and basis P&amp;L contribution ($M)</div>
+    <div class="chart-wrap" style="height:180px"><canvas id="gapChart" role="img" aria-label="Hourly FX and basis P&L">Hourly FX and basis contribution.</canvas></div>
+  </div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page" id="p2">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="kpi-label">LCR (latest run)</div><div class="kpi-val" style="color:#2e7d32">134%</div><div class="kpi-delta up">Floor: 100% (internal 110%)</div></div>
+    <div class="kpi"><div class="kpi-label">NSFR monitor</div><div class="kpi-val" style="color:#2e7d32">121%</div><div class="kpi-delta up">Floor: 100%</div></div>
+    <div class="kpi"><div class="kpi-label">Survival horizon</div><div class="kpi-val">43 days</div><div class="kpi-delta up">Limit: >= 30 days</div></div>
+    <div class="kpi"><div class="kpi-label">Unencumbered HQLA</div><div class="kpi-val">$93B</div><div class="kpi-delta neu">Level 1 share: 83%</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Intraday cumulative liquidity gap by hour ($M)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="ladderChart" role="img" aria-label="Intraday cumulative liquidity gap">Intraday gap by hour.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Funding mix through the day (stacked %)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="fundingChart" role="img" aria-label="Intraday funding mix stacked bar">Funding mix by hour.</canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">Top 10 depositor concentration (% of total funding, 14:00 ET)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+      <div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Sovereign Wealth A</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:52%;background:#002855"></div></div><div class="mini-bar-pct">5.2%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Corp Treasury B</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:38%;background:#002855"></div></div><div class="mini-bar-pct">3.8%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Pension Fund C</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:31%;background:#002855"></div></div><div class="mini-bar-pct">3.1%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Insurance Co D</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:24%;background:#002855"></div></div><div class="mini-bar-pct">2.4%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Corp Treasury E</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:19%;background:#002855"></div></div><div class="mini-bar-pct">1.9%</div></div>
+      </div>
+      <div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Muni Authority F</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:17%;background:#5b7fa6"></div></div><div class="mini-bar-pct">1.7%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Corp Treasury G</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:15%;background:#5b7fa6"></div></div><div class="mini-bar-pct">1.5%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Fund Manager H</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:13%;background:#5b7fa6"></div></div><div class="mini-bar-pct">1.3%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Pension Fund I</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:11%;background:#5b7fa6"></div></div><div class="mini-bar-pct">1.1%</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Corp Treasury J</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:9%;background:#5b7fa6"></div></div><div class="mini-bar-pct">0.9%</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3 -->
+<div class="page" id="p3">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="kpi-label">Customer deposits (today)</div><div class="kpi-val">$2.56T</div><div class="kpi-delta up">+$4.1B vs open</div></div>
+    <div class="kpi"><div class="kpi-label">Uninsured deposits</div><div class="kpi-val">$1.56T</div><div class="kpi-delta neu">60.9% of total</div></div>
+    <div class="kpi"><div class="kpi-label">Deposit beta (rolling 30D)</div><div class="kpi-val">46%</div><div class="kpi-delta neu">Within policy band 40-55%</div></div>
+    <div class="kpi"><div class="kpi-label">Available CB/FHLB capacity</div><div class="kpi-val">$449B</div><div class="kpi-delta neu">Not primary liquidity source</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">5-day deposits vs wholesale funding ($B)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="ldChart" role="img" aria-label="Deposits and wholesale funding trend">Deposits and wholesale funding over 5 days.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Deposit mix stability by segment (%)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="assetMixChart" role="img" aria-label="Deposit stability by segment">Deposit stability by segment.</canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Intraday payment obligations matrix ($M)</div>
+    <table class="limits-table">
+      <thead><tr><th>Window</th><th>Expected outflow</th><th>Settled</th><th>Gap</th><th>Cumulative gap</th></tr></thead>
+      <tbody>
+        <tr><td>08:00-09:00</td><td>$1,840M</td><td>$1,920M</td><td style="color:#2e7d32">+$80M</td><td style="color:#2e7d32">+$80M</td></tr>
+        <tr><td>09:00-10:00</td><td>$2,110M</td><td>$1,980M</td><td style="color:#c62828">-$130M</td><td style="color:#c62828">-$50M</td></tr>
+        <tr><td>10:00-11:00</td><td>$2,480M</td><td>$2,260M</td><td style="color:#c62828">-$220M</td><td style="color:#c62828">-$270M</td></tr>
+        <tr><td>11:00-12:00</td><td>$2,940M</td><td>$2,610M</td><td style="color:#c62828">-$330M</td><td style="color:#c62828">-$600M</td></tr>
+        <tr><td>12:00-13:00</td><td>$2,350M</td><td>$2,560M</td><td style="color:#2e7d32">+$210M</td><td style="color:#c62828">-$390M</td></tr>
+        <tr><td>13:00-14:00</td><td>$2,060M</td><td>$2,420M</td><td style="color:#2e7d32">+$360M</td><td style="color:#c62828">-$30M</td></tr>
+        <tr><td>14:00-15:00</td><td>$1,920M</td><td>$2,110M</td><td style="color:#2e7d32">+$190M</td><td style="color:#2e7d32">+$160M</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE 4 -->
+<div class="page" id="p4">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="kpi-label">CET1 (latest close)</div><div class="kpi-val" style="color:#2e7d32">14.1%</div><div class="kpi-delta up">Requirement 11.5%</div></div>
+    <div class="kpi"><div class="kpi-label">TLAC ratio</div><div class="kpi-val">27.6%</div><div class="kpi-delta neu">Surplus $93B</div></div>
+    <div class="kpi"><div class="kpi-label">Eligible LTD ratio</div><div class="kpi-val">12.0%</div><div class="kpi-delta neu">Surplus $31B</div></div>
+    <div class="kpi"><div class="kpi-label">Advanced RWA</div><div class="kpi-val">$2.05T</div><div class="kpi-delta down">+2.1% QoQ</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">10-day CET1 and management buffer trend (%)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="capChart" role="img" aria-label="CET1 ratio trend">CET1 trend over 10 business days.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Daily stress scan — CET1 impact</div>
+      <div style="padding-top:8px">
+        <div class="waterfall-row"><div class="wf-label">Base (current)</div><div class="wf-bar-wrap"><div class="wf-bar" style="width:100%;background:#b5d4f4;left:0"></div></div><div class="wf-val">14.1%</div></div>
+        <div class="waterfall-row"><div class="wf-label">Mild recession</div><div class="wf-bar-wrap"><div class="wf-bar" style="width:90%;background:#97c459;left:0"></div></div><div class="wf-val">12.7%</div></div>
+        <div class="waterfall-row"><div class="wf-label">Adverse</div><div class="wf-bar-wrap"><div class="wf-bar" style="width:76%;background:#fac775;left:0"></div></div><div class="wf-val">10.8%</div></div>
+        <div class="waterfall-row"><div class="wf-label">Severe adverse</div><div class="wf-bar-wrap"><div class="wf-bar" style="width:54%;background:#f09595;left:0"></div></div><div class="wf-val">7.6%</div></div>
+        <div style="border-top:0.5px dashed #ccc;margin:8px 0"></div>
+        <div class="waterfall-row"><div class="wf-label" style="color:#c62828">Reg. minimum</div><div class="wf-bar-wrap"><div class="wf-bar" style="width:82%;border-top:1.5px dashed #c62828;background:transparent;left:0"></div></div><div class="wf-val" style="color:#c62828">11.5%</div></div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Daily scenario engine flags severe path below minimum; contingent issuance and RWA optimization playbook remains active.</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">RWA composition and issuance coverage ($B)</div>
+    <div class="chart-wrap" style="height:160px"><canvas id="rwaChart" role="img" aria-label="RWA composition and issuance coverage">RWA and issuance coverage by risk type.</canvas></div>
+  </div>
+</div>
+
+<!-- PAGE 5 -->
+<div class="page" id="p5">
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="kpi-label">NII run-rate (today)</div><div class="kpi-val">$282M</div><div class="kpi-delta up">+2.3% vs 5D avg</div></div>
+    <div class="kpi"><div class="kpi-label">Matched-maturity FTP (3M)</div><div class="kpi-val">4.07%</div><div class="kpi-delta neu">SOFR + 58bps</div></div>
+    <div class="kpi"><div class="kpi-label">Deposit pass-through cost</div><div class="kpi-val">46bps</div><div class="kpi-delta down">-3bps vs yesterday</div></div>
+    <div class="kpi"><div class="kpi-label">Treasury/CIO NII attribution</div><div class="kpi-val">$17.9M</div><div class="kpi-delta neu">After FTP transfer</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Daily NII bridge — components (bps)</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="nimWfChart" role="img" aria-label="Daily NII bridge">Daily NII bridge components.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Intraday FTP spread by business line</div>
+      <div style="padding-top:8px">
+        <div class="mini-bar-row"><div class="mini-bar-label">Retail deposits</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:90%;background:#002855"></div></div><div class="mini-bar-pct">+72bp</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Home lending</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:86%;background:#002855"></div></div><div class="mini-bar-pct">+69bp</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">SME lending</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:80%;background:#1a5276"></div></div><div class="mini-bar-pct">+64bp</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Corporate TS</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:73%;background:#5b7fa6"></div></div><div class="mini-bar-pct">+58bp</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">CIB lending</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:57%;background:#fac775"></div></div><div class="mini-bar-pct">+45bp</div></div>
+        <div class="mini-bar-row"><div class="mini-bar-label">Markets/treasury</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:39%;background:#f09595"></div></div><div class="mini-bar-pct">+31bp</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 6 -->
+<div class="page" id="p6">
+  <div style="display:flex;gap:10px;margin-bottom:14px">
+    <div class="kpi" style="flex:1"><div class="kpi-label">Controls monitored</div><div class="kpi-val">32</div></div>
+    <div class="kpi" style="flex:1"><div class="kpi-label">Green</div><div class="kpi-val" style="color:#2e7d32">26</div></div>
+    <div class="kpi" style="flex:1"><div class="kpi-label">Amber</div><div class="kpi-val" style="color:#e65100">4</div></div>
+    <div class="kpi" style="flex:1"><div class="kpi-label">Red (breach)</div><div class="kpi-val" style="color:#c62828">2</div></div>
+    <div class="kpi" style="flex:1"><div class="kpi-label">Alerts (24h)</div><div class="kpi-val">11</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Live limits and alerts register</div>
+    <table class="limits-table">
+      <thead><tr><th style="width:80px">Risk category</th><th>Metric</th><th>Limit</th><th>Current</th><th>Headroom</th><th>Status</th><th>Trend</th></tr></thead>
+      <tbody>
+        <tr><td>IRR</td><td>Duration gap</td><td>&le; 2.5 yrs</td><td>2.6 yrs</td><td style="color:#c62828">-0.1 yrs</td><td><span class="badge badge-r">Breach</span></td><td><div class="spark"><span style="height:48%"></span><span style="height:56%"></span><span style="height:62%"></span><span style="height:68%"></span><span style="height:77%"></span><span style="height:86%" class="hi"></span></div></td></tr>
+        <tr><td>Capital</td><td>Severe stress CET1</td><td>&ge; 10.5%</td><td>7.6%</td><td style="color:#c62828">-2.9pp</td><td><span class="badge badge-r">Breach</span></td><td><div class="spark"><span style="height:78%"></span><span style="height:73%"></span><span style="height:66%"></span><span style="height:60%"></span><span style="height:53%"></span><span style="height:48%" class="hi"></span></div></td></tr>
+        <tr><td>Liquidity</td><td>Top-5 funding concentration</td><td>&le; 15%</td><td>16.8%</td><td style="color:#e65100">-1.8pp</td><td><span class="badge badge-a">Warning</span></td><td><div class="spark"><span style="height:52%"></span><span style="height:57%"></span><span style="height:61%"></span><span style="height:66%"></span><span style="height:70%"></span><span style="height:76%" class="hi"></span></div></td></tr>
+        <tr><td>IRR</td><td>Cross-currency basis (1bp)</td><td>&ge; -$12M</td><td>-$11.0M</td><td style="color:#e65100">$1.0M</td><td><span class="badge badge-a">Warning</span></td><td><div class="spark"><span style="height:35%"></span><span style="height:42%"></span><span style="height:49%"></span><span style="height:57%"></span><span style="height:63%"></span><span style="height:70%" class="hi"></span></div></td></tr>
+        <tr><td>Liquidity</td><td>LCR nowcast</td><td>&ge; 110%</td><td>134%</td><td style="color:#2e7d32">24pp</td><td><span class="badge badge-g">OK</span></td><td><div class="spark"><span style="height:82%" class="hi"></span><span style="height:85%"></span><span style="height:87%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span></div></td></tr>
+        <tr><td>Liquidity</td><td>NSFR</td><td>≥ 100%</td><td>121%</td><td style="color:#2e7d32">21pp</td><td><span class="badge badge-g">OK</span></td><td><div class="spark"><span style="height:80%"></span><span style="height:82%"></span><span style="height:83%"></span><span style="height:84%"></span><span style="height:85%"></span><span style="height:86%"></span></div></td></tr>
+        <tr><td>Capital</td><td>CET1 (base)</td><td>&ge; 11.5%</td><td>14.1%</td><td style="color:#2e7d32">260bps</td><td><span class="badge badge-g">OK</span></td><td><div class="spark"><span style="height:74%"></span><span style="height:76%"></span><span style="height:78%"></span><span style="height:80%"></span><span style="height:82%"></span><span style="height:84%"></span></div></td></tr>
+        <tr><td>Funding</td><td>TLAC surplus</td><td>&ge; $60B</td><td>$91B</td><td style="color:#2e7d32">$31B</td><td><span class="badge badge-g">OK</span></td><td><div class="spark"><span style="height:58%"></span><span style="height:61%"></span><span style="height:64%"></span><span style="height:67%"></span><span style="height:70%"></span><span style="height:74%"></span></div></td></tr>
+        <tr><td>Market</td><td>Treasury VaR (97.5%, 1-day)</td><td>&le; $47M</td><td>$34.1M</td><td style="color:#2e7d32">$12.9M</td><td><span class="badge badge-g">OK</span></td><td><div class="spark"><span style="height:61%"></span><span style="height:59%"></span><span style="height:57%"></span><span style="height:56%"></span><span style="height:58%"></span><span style="height:60%"></span></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer-bar">
+  <span>Demo Bank &amp; Co. · CIB Treasury intraday risk monitoring · Internal use only</span>
+  <span style="color:#D4A843;font-weight:500">MOCKUP ONLY — Illustrative data, not representative of actual Demo Bank positions</span>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+document.getElementById('nav').addEventListener('click',e=>{
+  const t=e.target.closest('.nav-tab');
+  if(!t)return;
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.page).classList.add('active');
+});
+
+const intradayHours=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
+const checkpoints=['T-1 Close','09:00','11:00','13:00','15:00'];
+const quarters=["Q2'25","Q3'25","Q4'25","Q1'26","Q2'26"];
+const JPM='#002855';
+const JPML='#5b7fa6';
+const GOLD='#D4A843';
+
+function mkChart(id,type,labels,datasets,opts={}){
+  const el=document.getElementById(id);
+  if(!el)return;
+  new Chart(el,{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},...opts}});
+}
+
+mkChart('nimChart','line',intradayHours,
+  [{data:[41,52,67,81,74,69,72,70,65],borderColor:JPM,backgroundColor:'rgba(0,40,85,0.07)',fill:true,tension:0.35,pointRadius:3,pointBackgroundColor:JPM}],
+  {scales:{y:{min:35,max:90,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}
+);
+
+mkChart('bsChart','doughnut',['Central bank cash','Sovereigns','Agency MBS','Other eligible'],
+  [{data:[29,52,11,8],backgroundColor:[JPM,'#1a5276',JPML,'#b4b2a9'],borderWidth:2,borderColor:'#fff'}],
+  {plugins:{legend:{display:true,position:'right',labels:{font:{size:11},boxWidth:12}}}}
+);
+
+mkChart('niiChart','bar',checkpoints,
+  [{data:[-22,-24,-25,-23,-24],backgroundColor:ctx=>ctx.raw>=0?'#97c459':'#f09595',borderRadius:2}],
+  {scales:{y:{ticks:{callback:v=>'$'+v+'M'}},x:{grid:{display:false}}}}
+);
+mkChart('eveChart','bar',['O/N','1M','3M','6M','1Y','2Y','5Y','10Y'],
+  [{data:[0.1,-0.2,-0.5,-0.9,-1.3,-1.0,-0.7,-0.3],backgroundColor:ctx=>ctx.raw>=0?'#97c459':'#f09595',borderRadius:2}],
+  {scales:{y:{ticks:{callback:v=>'$'+v.toFixed(1)+'M'}},x:{grid:{display:false}}}}
+);
+mkChart('gapChart','bar',intradayHours,
+  [
+    {label:'FX spot P&L',data:[1.8,2.4,3.1,2.9,1.7,2.3,1.6,1.9,1.3],backgroundColor:JPM,stack:'p'},
+    {label:'Basis P&L',data:[-0.7,-1.1,-1.8,-2.0,-1.4,-1.2,-0.9,-1.1,-0.8],backgroundColor:'#f09595',stack:'p'}
+  ],
+  {plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:12}}},scales:{y:{stacked:true,ticks:{callback:v=>'$'+v+'M'}},x:{stacked:true,grid:{display:false}}}}
+);
+mkChart('ladderChart','bar',intradayHours,
+  [{data:[2.8,1.4,0.6,-0.9,-1.7,-1.0,-0.4,0.3,0.7],backgroundColor:ctx=>ctx.raw>=0?JPM:'#f09595',borderRadius:2}],
+  {scales:{y:{ticks:{callback:v=>'$'+v.toFixed(1)+'B'}},x:{grid:{display:false}}}}
+);
+mkChart('fundingChart','bar',intradayHours,
+  [
+    {label:'Sent',data:[6.4,8.2,10.8,12.1,11.4,9.9,8.7,7.2,5.4],backgroundColor:JPM,stack:'s'},
+    {label:'Received',data:[5.8,7.4,9.9,11.2,11.0,10.1,9.4,8.2,6.1],backgroundColor:JPML,stack:'s'}
+  ],
+  {plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:12}}},scales:{y:{stacked:true,ticks:{callback:v=>'$'+v+'B'}},x:{stacked:true,grid:{display:false}}}}
+);
+mkChart('ldChart','line',intradayHours,
+  [
+    {label:'Inflow',data:[4.1,6.3,8.8,12.4,14.7,16.9,18.6,20.4,22.1],borderColor:JPM,tension:0.3,pointRadius:2},
+    {label:'Outflow',data:[5.2,7.1,9.6,12.9,15.2,17.8,19.1,20.8,21.4],borderColor:GOLD,tension:0.3,pointRadius:2,borderDash:[4,3]}
+  ],
+  {plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:12}}},scales:{y:{ticks:{callback:v=>'$'+v+'B'}},x:{grid:{display:false}}}}
+);
+mkChart('assetMixChart','bar',['Retail deposits','Wholesale ops','Secured funding','CP + senior','Other'],
+  [{data:[42,31,14,8,5],backgroundColor:[JPM,'#1a5276',JPML,GOLD,'#b4b2a9'],borderRadius:2,indexAxis:'y'}],
+  {indexAxis:'y',scales:{x:{ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}
+);
+mkChart('capChart','line',quarters,
+  [
+    {label:'CET1 Advanced',data:[15.8,15.2,14.1,14.0,14.1],borderColor:JPM,tension:0.3,pointRadius:2},
+    {label:'Min (11.5%)',data:Array(5).fill(11.5),borderColor:'#c62828',borderDash:[5,3],pointRadius:0}
+  ],
+  {plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:12}}},scales:{y:{min:10,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}
+);
+mkChart('rwaChart','bar',['Credit risk','Market risk','Op risk','Total RWA'],
+  [{data:[1494,93,458,2045],backgroundColor:[JPM,JPML,GOLD,'#1a1a2e'],borderRadius:2}],
+  {scales:{y:{ticks:{callback:v=>'$'+v+'B'}},x:{grid:{display:false}}}}
+);
+mkChart('nimWfChart','bar',['Open run-rate','Deposit beta drag','Hedge carry','FTP uplift','Current run-rate'],
+  [{data:[5.2,-1.4,-0.8,0.6,3.6],backgroundColor:['#002855','#f09595','#fac775','#97c459','#1a5276'],borderRadius:2}],
+  {scales:{y:{ticks:{callback:v=>v+'bps'}},x:{grid:{display:false}}}}
+);
+</script>
