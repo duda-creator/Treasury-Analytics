@@ -69,3 +69,19 @@ http://localhost:8050
 - No local `.env` file is required for the default setup.
 - If `python` does not point to Python 3 on your machine, use `python3` instead.
 - Run data generation before the warehouse build, because the database loader expects the generated CSV files to exist first.
+
+## GitHub Pages
+
+This repository now includes a static landing page at `index.html` that links to the two dashboard pages:
+
+- `Treasury_ALCO_Dashboard.html`
+- `Treasury_Command_Center.html`
+
+To publish it with GitHub Pages:
+
+1. Push the repository to GitHub.
+2. In the repository, open `Settings` > `Pages`.
+3. Set the source to deploy from the branch root, or keep the default branch root if your repo uses direct Pages publishing.
+4. Wait for GitHub Pages to build, then open the Pages URL GitHub provides.
+
+The `.nojekyll` file at the repository root prevents GitHub Pages from applying Jekyll processing to the static files.

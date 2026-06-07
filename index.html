@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Bank Treasury Analytics</title>
+<style>
+  :root {
+    --bg: #07111f;
+    --bg2: #0d1f36;
+    --card: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.1);
+    --text: #f4f7fb;
+    --muted: rgba(244,247,251,0.72);
+    --accent: #d4a843;
+    --accent2: #5b7fa6;
+    --shadow: 0 24px 60px rgba(0,0,0,0.28);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(212,168,67,0.18), transparent 28%),
+      radial-gradient(circle at 90% 12%, rgba(91,127,166,0.22), transparent 24%),
+      linear-gradient(160deg, var(--bg), var(--bg2));
+  }
+
+  .shell {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 28px 0 36px;
+  }
+
+  .hero {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: 1.35fr 0.85fr;
+    align-items: stretch;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
+  }
+
+  .intro {
+    padding: 30px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(244,247,251,0.7);
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(212,168,67,0.15);
+  }
+
+  h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(2.2rem, 5vw, 4.4rem);
+    line-height: 0.98;
+    letter-spacing: -0.05em;
+  }
+
+  .lede {
+    margin: 0;
+    max-width: 62ch;
+    font-size: 1.02rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .links {
+    display: grid;
+    gap: 14px;
+    margin-top: 26px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .link-card {
+    display: block;
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  }
+
+  .link-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212,168,67,0.45);
+    background: rgba(255,255,255,0.08);
+  }
+
+  .link-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(212,168,67,0.15);
+    color: var(--accent);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .link-desc {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+    font-size: 0.93rem;
+  }
+
+  .sidebar {
+    display: grid;
+    gap: 14px;
+  }
+
+  .logo-card {
+    padding: 26px;
+    display: grid;
+    gap: 18px;
+    place-items: center;
+    text-align: center;
+  }
+
+  .mark {
+    width: 92px;
+    height: 92px;
+    border-radius: 24px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04));
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    font-size: 1.6rem;
+  }
+
+  .stack {
+    display: grid;
+    gap: 8px;
+  }
+
+  .stack-title {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(244,247,251,0.66);
+  }
+
+  .stack-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .footer {
+    margin-top: 18px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: rgba(244,247,251,0.62);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; }
+    .links { grid-template-columns: 1fr; }
+    .intro { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="panel intro">
+        <span class="eyebrow">GitHub Pages Home</span>
+        <h1>Demo Bank Treasury Analytics</h1>
+        <p class="lede">
+          Choose one of the two static dashboards below. Both files live in the repository root,
+          so GitHub Pages can serve them directly once the repository is published from the root
+          branch.
+        </p>
+
+        <div class="links">
+          <a class="link-card" href="Treasury_ALCO_Dashboard.html">
+            <div class="link-title"><span class="badge">ALCO</span> ALCO Dashboard</div>
+            <p class="link-desc">
+              Monthly asset-liability committee view with NIM, liquidity, capital, FTP, and limits.
+            </p>
+          </a>
+
+          <a class="link-card" href="Treasury_Command_Center.html">
+            <div class="link-title"><span class="badge">LIVE</span> Treasury Command Center</div>
+            <p class="link-desc">
+              Intraday monitoring view for liquidity, funding, capital, and live alerts.
+            </p>
+          </a>
+        </div>
+      </div>
+
+      <aside class="panel logo-card">
+        <div class="mark">DB</div>
+        <div class="stack">
+          <div class="stack-title">Repository mode</div>
+          <div class="stack-value">Static HTML site</div>
+        </div>
+        <div class="stack">
+          <div class="stack-title">Deployment target</div>
+          <div class="stack-value">GitHub Pages</div>
+        </div>
+        <div class="stack">
+          <div class="stack-title">Entry point</div>
+          <div class="stack-value">index.html</div>
+        </div>
+      </aside>
+    </section>
+
+    <div class="footer panel">
+      Publish this repo from the branch root, or keep this file as the Pages entry point and use the links above
+      to open the dashboards. The .nojekyll marker prevents GitHub Pages from rewriting the static files.
+    </div>
+  </main>
+</body>
+</html>
