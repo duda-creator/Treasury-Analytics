@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo Bank — Dual-Hat Command · Head of CIB Treasury &amp; CPT</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:      #002855;
+    --navy-dk:   #001e42;
+    --navy-md:   #1a5276;
+    --steel:     #5b7fa6;
+    --gold:      #D4A843;
+    --gold-lt:   #f5e6b8;
+    --cpt:       #14532d;
+    --cpt-lt:    #dcfce7;
+    --tsy:       #1e3a5f;
+    --tsy-lt:    #dbeafe;
+    --bg-page:   #f0f2f5;
+    --bg-card:   #ffffff;
+    --bg-thead:  #f4f6f9;
+    --txt-pri:   #1a1a2e;
+    --txt-sec:   #4a5568;
+    --txt-mute:  #8896a8;
+    --border:    #dde3ec;
+    --border-lt: #eef1f5;
+    --green:     #2e7d32;
+    --green-bg:  #e8f5e9;
+    --amber:     #bf360c;
+    --amber-bg:  #fff3e0;
+    --red:       #b71c1c;
+    --red-bg:    #ffebee;
+    font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body { background: var(--bg-page); color: var(--txt-pri); font-size: 13px; line-height: 1.5; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--navy);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .octagon {
+    width: 34px; height: 34px; background: #fff;
+    clip-path: polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .oct-inner { font-size: 10px; font-weight: 600; color: var(--navy); }
+  .wordmark { display: flex; flex-direction: column; line-height: 1.2; }
+  .bank-name { font-size: 14px; font-weight: 500; color: #fff; }
+  .bank-sub  { font-size: 9px; color: rgba(255,255,255,0.55); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .mockup-badge {
+    background: rgba(212,168,67,0.2); border: 1px solid var(--gold);
+    border-radius: 3px; padding: 3px 10px;
+    font-size: 9px; font-weight: 600; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .topbar-meta { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .scen-btns { display: flex; gap: 4px; }
+  .scen-btn {
+    padding: 4px 10px; font-size: 11px;
+    border: 0.5px solid rgba(255,255,255,0.25); border-radius: 3px;
+    cursor: pointer; background: transparent; color: rgba(255,255,255,0.6);
+    font-family: inherit; transition: all 0.15s;
+  }
+  .scen-btn:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
+  .scen-btn.active { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.6); }
+
+  /* ── NAV ── */
+  .nav {
+    display: flex; background: var(--navy-dk);
+    padding: 0 20px; overflow-x: auto;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: sticky; top: 56px; z-index: 99;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    padding: 10px 16px; font-size: 12px; font-weight: 400;
+    color: rgba(255,255,255,0.5); cursor: pointer;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+    transition: color 0.15s; user-select: none;
+  }
+  .nav-tab:hover { color: rgba(255,255,255,0.85); }
+  .nav-tab.active { color: #fff; border-bottom: 2px solid var(--gold); font-weight: 500; }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 16px 20px 28px; }
+  .page.active { display: block; }
+
+  /* ── HAT BANNER ── */
+  .hat-bar {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .hat-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .hat-tsy  { background: var(--tsy-lt); color: var(--tsy); border: 1px solid #93c5fd; }
+  .hat-cpt  { background: var(--cpt-lt); color: var(--cpt); border: 1px solid #86efac; }
+  .hat-both { background: var(--gold-lt); color: #7a5c00; border: 1px solid var(--gold); }
+  .hat-q {
+    margin-left: auto; font-size: 11px; font-style: italic;
+    color: var(--txt-mute); background: #f8f9fa; border: 1px solid var(--border);
+    padding: 5px 12px; border-radius: 4px;
+  }
+
+  /* ── KPI ROW ── */
+  .kpi-row { display: grid; gap: 10px; margin-bottom: 14px; }
+  .kpi-5 { grid-template-columns: repeat(5, 1fr); }
+  .kpi-4 { grid-template-columns: repeat(4, 1fr); }
+  .kpi-3 { grid-template-columns: repeat(3, 1fr); }
+  .kpi {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-top: 3px solid var(--navy); border-radius: 4px; padding: 11px 14px;
+  }
+  .kpi.tsy  { border-top-color: #1e40af; }
+  .kpi.cpt  { border-top-color: var(--cpt); }
+  .kpi.both { border-top-color: var(--gold); }
+  .kpi-label { font-size: 10px; color: var(--txt-mute); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .kpi-val   { font-size: 22px; font-weight: 500; }
+  .kpi-delta { font-size: 11px; margin-top: 3px; }
+  .d-up   { color: var(--green); }
+  .d-dn   { color: var(--red); }
+  .d-neu  { color: var(--txt-mute); }
+  .d-warn { color: var(--amber); }
+
+  /* ── GRIDS ── */
+  .g2  { display: grid; grid-template-columns: 1fr 1fr;     gap: 12px; margin-bottom: 12px; }
+  .g3  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .g21 { display: grid; grid-template-columns: 2fr 1fr;     gap: 12px; margin-bottom: 12px; }
+  .g12 { display: grid; grid-template-columns: 1fr 2fr;     gap: 12px; margin-bottom: 12px; }
+
+  /* ── CARDS ── */
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; }
+  .card-mb { margin-bottom: 12px; }
+  .card-title {
+    font-size: 10px; font-weight: 600; color: var(--navy);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding-bottom: 8px; margin-bottom: 10px;
+    border-bottom: 1.5px solid var(--border-lt);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .tag {
+    font-size: 9px; padding: 2px 8px; border-radius: 2px;
+    font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .tag-tsy  { background: var(--tsy-lt); color: var(--tsy); }
+  .tag-cpt  { background: var(--cpt-lt); color: var(--cpt); }
+  .tag-both { background: var(--gold-lt); color: #7a5c00; }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── RAG ── */
+  .rag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .rag-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rag-item { border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; border-left: 3px solid; }
+  .rag-item.g { border-left-color: var(--green); }
+  .rag-item.a { border-left-color: #e65100; }
+  .rag-item.r { border-left-color: var(--red); }
+  .rag-label { font-size: 9px; color: var(--txt-mute); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+  .rag-val   { font-size: 16px; font-weight: 500; }
+  .rag-lim   { font-size: 10px; color: var(--txt-mute); margin-top: 2px; }
+
+  /* ── DOTS / BADGES ── */
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; margin-top: 4px; }
+  .dot.g { background: var(--green); } .dot.a { background: #e65100; } .dot.r { background: var(--red); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 10px; font-weight: 600; }
+  .badge-g { background: var(--green-bg); color: var(--green); }
+  .badge-a { background: var(--amber-bg); color: var(--amber); }
+  .badge-r { background: var(--red-bg); color: var(--red); }
+  .badge-b { background: #e8eef7; color: var(--navy); }
+
+  /* ── MARKET TICKER ── */
+  .ticker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 8px; }
+  .ticker-item {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
+    padding: 8px 12px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .ticker-name  { font-size: 10px; color: var(--txt-mute); text-transform: uppercase; letter-spacing: 0.06em; }
+  .ticker-val   { font-size: 16px; font-weight: 500; font-family: 'IBM Plex Mono', monospace; }
+  .ticker-delta { font-size: 11px; font-family: 'IBM Plex Mono', monospace; }
+  .tick-up  { color: var(--green); }
+  .tick-dn  { color: var(--red); }
+  .tick-neu { color: var(--txt-mute); }
+
+  /* ── TABLES ── */
+  .dt { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dt th { font-size: 10px; font-weight: 600; color: var(--navy); text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--navy); background: var(--bg-thead); text-transform: uppercase; letter-spacing: 0.05em; }
+  .dt td { padding: 7px 10px; border-bottom: 1px solid var(--border-lt); }
+  .dt tr:hover td { background: #fafbfd; }
+  .c-g { color: var(--green); font-weight: 500; }
+  .c-r { color: var(--red);   font-weight: 500; }
+  .c-a { color: var(--amber); font-weight: 500; }
+  .c-n { color: var(--navy);  font-weight: 500; }
+
+  /* ── SPARK ── */
+  .spark { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+  .spark span { width: 6px; border-radius: 1px 1px 0 0; background: #c8d8ec; flex-shrink: 0; }
+  .spark span.hi { background: var(--navy); }
+
+  /* ── MINI BARS ── */
+  .mb-row   { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .mb-label { width: 120px; font-size: 11px; color: var(--txt-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+  .mb-track { flex: 1; height: 9px; background: var(--bg-page); border-radius: 2px; overflow: hidden; }
+  .mb-fill  { height: 100%; border-radius: 2px; }
+  .mb-val   { width: 64px; text-align: right; font-size: 11px; font-weight: 500; }
+
+  /* ── WATERFALL ── */
+  .wf-row   { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .wf-label { width: 150px; font-size: 11px; color: var(--txt-sec); flex-shrink: 0; }
+  .wf-wrap  { flex: 1; position: relative; height: 16px; background: var(--bg-page); border-radius: 2px; overflow: hidden; }
+  .wf-bar   { height: 100%; border-radius: 2px; position: absolute; left: 0; }
+  .wf-val   { width: 72px; text-align: right; font-size: 11px; font-weight: 500; }
+
+  /* ── ENTITY CASH PANEL ── */
+  .entity-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .entity-item {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; position: relative; overflow: hidden;
+  }
+  .entity-item::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .entity-item.ok::before  { background: var(--green); }
+  .entity-item.warn::before { background: #e65100; }
+  .entity-item.red::before  { background: var(--red); }
+  .entity-name { font-size: 10px; font-weight: 600; color: var(--txt-mute); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .entity-pos  { font-size: 20px; font-weight: 500; margin-bottom: 2px; }
+  .entity-ccy  { font-size: 10px; color: var(--txt-mute); margin-bottom: 6px; }
+  .entity-sub  { font-size: 11px; color: var(--txt-sec); }
+
+  /* ── RISK SENTIMENT GAUGE ── */
+  .sentiment-bar {
+    height: 12px; border-radius: 6px; margin: 8px 0;
+    background: linear-gradient(to right, #b71c1c, #e65100, #f9a825, #2e7d32, #1b5e20);
+    position: relative;
+  }
+  .sentiment-needle {
+    position: absolute; top: -4px; width: 4px; height: 20px;
+    background: var(--navy); border-radius: 2px;
+    transform: translateX(-50%);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  /* ── ACTION TABLE ── */
+  .action-item {
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 10px; overflow: hidden;
+  }
+  .action-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-thead);
+    border-bottom: 1px solid var(--border);
+  }
+  .action-icon  { font-size: 16px; flex-shrink: 0; }
+  .action-title { font-size: 12px; font-weight: 600; flex: 1; }
+  .action-body  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
+  .action-col   { padding: 10px 14px; border-right: 1px solid var(--border-lt); }
+  .action-col:last-child { border-right: none; }
+  .action-col-title { font-size: 9px; font-weight: 600; color: var(--txt-mute); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .action-col-body  { font-size: 11px; color: var(--txt-sec); line-height: 1.6; }
+  .action-col-body strong { color: var(--txt-pri); }
+
+  .action-item.sev-r .action-header { border-left: 4px solid var(--red); }
+  .action-item.sev-a .action-header { border-left: 4px solid #e65100; }
+  .action-item.sev-g .action-header { border-left: 4px solid var(--green); }
+
+  /* ── ATTRIBUTION ROWS ── */
+  .attr-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .attr-label { width: 160px; font-size: 11px; color: var(--txt-sec); flex-shrink: 0; }
+  .attr-bar-wrap { flex: 1; position: relative; height: 14px; background: var(--bg-page); border-radius: 2px; }
+  .attr-bar-pos { height: 100%; border-radius: 2px; background: var(--green); position: absolute; left: 50%; top: 0; }
+  .attr-bar-neg { height: 100%; border-radius: 2px; background: var(--red); position: absolute; right: 50%; top: 0; }
+  .attr-val { width: 70px; text-align: right; font-size: 11px; font-weight: 500; }
+
+  /* ── RISK COMMENTARY ── */
+  .risk-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border-lt); }
+  .risk-row:last-child { border-bottom: none; }
+  .risk-title { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+  .risk-body  { font-size: 11px; color: var(--txt-sec); line-height: 1.5; }
+
+  /* ── MONO ── */
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+  /* ── SECTION DIVIDER ── */
+  .sec-lbl {
+    font-size: 10px; font-weight: 600; color: var(--txt-mute);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .sec-lbl::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .val-g { color: var(--green); }
+  .val-r { color: var(--red); }
+  .val-a { color: var(--amber); }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--navy-dk); color: rgba(255,255,255,0.35);
+    font-size: 10px; padding: 10px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px;
+  }
+  .footer-m { color: var(--gold); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ TOP BAR ═══════════════════════ -->
+<div class="topbar">
+  <div class="logo">
+    <div class="octagon"><div class="oct-inner">DB</div></div>
+    <div class="wordmark">
+      <span class="bank-name">Demo Bank</span>
+      <span class="bank-sub">Head of CIB Treasury &amp; CPT — Dual-Hat Command</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="mockup-badge">Mockup only — illustrative data</span>
+    <span class="topbar-meta">09 Jun 2026 · 14:22 ET · Intraday</span>
+    <div class="scen-btns">
+      <button class="scen-btn active" onclick="setScen(this,'base')">Base</button>
+      <button class="scen-btn" onclick="setScen(this,'adverse')">Adverse</button>
+      <button class="scen-btn" onclick="setScen(this,'severe')">Severe</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ NAV ═══════════════════════ -->
+<div class="nav" id="nav">
+  <div class="nav-tab active" data-page="p0">Dual-Hat Command</div>
+  <div class="nav-tab" data-page="p1">Start-of-Day Pulse</div>
+  <div class="nav-tab" data-page="p2">Treasury Operations</div>
+  <div class="nav-tab" data-page="p3">CPT Risk</div>
+  <div class="nav-tab" data-page="p4">EOD Attribution</div>
+  <div class="nav-tab" data-page="p5">Monitor → Diagnose → Act</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 0 — DUAL-HAT COMMAND
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page active" id="p0">
+
+  <div class="hat-bar">
+    <span class="hat-pill hat-tsy">🏛 Treasury Hat — LCR 134% · Cash +$6.2B net · Funding stable</span>
+    <span class="hat-pill hat-cpt">📊 CPT Hat — CDX HY +18bps overnight · Econ P&amp;L +$42.1M MTD</span>
+    <span class="hat-pill hat-both">⚡ Joint — 3 active constraints · 2 action items flagged</span>
+    <div class="hat-q">Key question: "What did I inherit overnight and can everyone fund themselves today?"</div>
+  </div>
+
+  <!-- Three critical questions answered -->
+  <div class="kpi-row kpi-3" style="margin-bottom:14px">
+    <div class="kpi tsy">
+      <div class="kpi-label">🏛 Can everyone fund themselves today?</div>
+      <div class="kpi-val val-g">Mostly yes</div>
+      <div class="kpi-delta d-warn">⚠ Tokyo −$0.5B USD gap — intercompany needed</div>
+    </div>
+    <div class="kpi cpt">
+      <div class="kpi-label">📊 Where can I lose money today?</div>
+      <div class="kpi-val val-a">HY widening</div>
+      <div class="kpi-delta d-warn">CDX HY +18bps O/N → −$12M unrealised P&amp;L</div>
+    </div>
+    <div class="kpi both">
+      <div class="kpi-label">⚡ Which desks create value after FTP?</div>
+      <div class="kpi-val val-g">4 of 6 desks</div>
+      <div class="kpi-delta d-warn">Structured Credit &amp; IG cash IBM position drag</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        Overnight market moves — key inputs to both hats
+        <span class="tag tag-both">Market Open</span>
+      </div>
+      <div class="ticker-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px">
+        <div class="ticker-item"><div class="ticker-name">UST 2Y</div><div class="ticker-val">4.72%</div><div class="ticker-delta tick-dn">▼ 3bps O/N</div></div>
+        <div class="ticker-item"><div class="ticker-name">UST 10Y</div><div class="ticker-val">4.41%</div><div class="ticker-delta tick-dn">▼ 5bps O/N</div></div>
+        <div class="ticker-item"><div class="ticker-name">SOFR O/N</div><div class="ticker-val">5.31%</div><div class="ticker-delta tick-neu">Unchanged</div></div>
+        <div class="ticker-item"><div class="ticker-name">GC Repo</div><div class="ticker-val">5.32%</div><div class="ticker-delta tick-dn">▲ 2bps O/N</div></div>
+        <div class="ticker-item"><div class="ticker-name">OIS Spread</div><div class="ticker-val">8bps</div><div class="ticker-delta tick-dn">▲ 1bp O/N</div></div>
+      </div>
+      <div class="ticker-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px">
+        <div class="ticker-item"><div class="ticker-name">CDX IG 5Y</div><div class="ticker-val">68bps</div><div class="ticker-delta tick-dn">▲ 4bps O/N</div></div>
+        <div class="ticker-item"><div class="ticker-name">CDX HY 5Y</div><div class="ticker-val">342bps</div><div class="ticker-delta tick-dn" style="color:var(--red)">▲ 18bps O/N</div></div>
+        <div class="ticker-item"><div class="ticker-name">iTraxx Main</div><div class="ticker-val">74bps</div><div class="ticker-delta tick-dn">▲ 3bps O/N</div></div>
+        <div class="ticker-item"><div class="ticker-name">USD/JPY</div><div class="ticker-val">156.82</div><div class="ticker-delta tick-dn">▲ 0.42%</div></div>
+        <div class="ticker-item"><div class="ticker-name">USD/CNH</div><div class="ticker-val">7.2441</div><div class="ticker-delta tick-dn">▲ 0.18%</div></div>
+      </div>
+      <!-- Risk-on / Risk-off sentiment -->
+      <div style="padding:6px 0 4px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt-mute);margin-bottom:3px">
+          <span>RISK OFF ◀</span>
+          <span style="font-weight:600;color:var(--txt-sec)">Market Sentiment</span>
+          <span>▶ RISK ON</span>
+        </div>
+        <div class="sentiment-bar"><div class="sentiment-needle" style="left:32%"></div></div>
+        <div style="font-size:10px;color:var(--amber);text-align:center;margin-top:3px">Mild risk-off — credit spreads widening, UST rally, JPY strength</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        Combined RAG — Treasury + CPT constraints
+        <span class="tag tag-both">Both Hats</span>
+      </div>
+      <div style="margin-bottom:8px;font-size:10px;font-weight:600;color:var(--tsy);text-transform:uppercase;letter-spacing:0.06em">🏛 Treasury constraints</div>
+      <div class="rag-grid" style="margin-bottom:12px">
+        <div class="rag-item g"><div class="rag-label">LCR</div><div class="rag-val">134%</div><div class="rag-lim">Internal min: 115%</div></div>
+        <div class="rag-item g"><div class="rag-label">NSFR</div><div class="rag-val">121%</div><div class="rag-lim">Min: 100%</div></div>
+        <div class="rag-item a"><div class="rag-label">Tokyo Cash</div><div class="rag-val">−$0.5B</div><div class="rag-lim">⚠ Interco needed</div></div>
+        <div class="rag-item g"><div class="rag-label">Survival horizon</div><div class="rag-val">47 days</div><div class="rag-lim">Min: 30 days</div></div>
+      </div>
+      <div style="margin-bottom:8px;font-size:10px;font-weight:600;color:var(--cpt);text-transform:uppercase;letter-spacing:0.06em">📊 CPT risk constraints</div>
+      <div class="rag-grid">
+        <div class="rag-item a"><div class="rag-label">CS01 (HY)</div><div class="rag-val">−$1.8M</div><div class="rag-lim">CDX HY +18bps</div></div>
+        <div class="rag-item g"><div class="rag-label">CS01 (IG)</div><div class="rag-val">−$2.1M</div><div class="rag-lim">Limit: −$3.5M</div></div>
+        <div class="rag-item g"><div class="rag-label">Hedge ratio</div><div class="rag-val">83%</div><div class="rag-lim">Target: ≥ 80%</div></div>
+        <div class="rag-item r"><div class="rag-label">IG Cash alloc.</div><div class="rag-val">98%</div><div class="rag-lim">Limit $8.0B</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        FTP value creation by business — gross P&amp;L vs after-charge contribution
+        <span class="tag tag-both">Both Hats</span>
+      </div>
+      <div class="chart-wrap" style="height:175px"><canvas id="d_ftpValue"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Priority actions — what requires attention now</div>
+      <div class="risk-row">
+        <span class="dot r"></span>
+        <div>
+          <div class="risk-title">Tokyo USD cash deficit — fund before Asia close</div>
+          <div class="risk-body">−$0.5B USD. Activate intercompany USD transfer from New York entity. Book USD/JPY hedge to neutralise FX risk on transfer. ETA: 2 hours.</div>
+        </div>
+      </div>
+      <div class="risk-row">
+        <span class="dot r"></span>
+        <div>
+          <div class="risk-title">CDX HY +18bps — review CPT long HY book</div>
+          <div class="risk-body">Unrealised P&L impact −$12M on $3.1B HY cash long. Consider adding CDX HY protection to reduce directional risk. Hedge ratio currently 83% vs 85% target.</div>
+        </div>
+      </div>
+      <div class="risk-row">
+        <span class="dot a"></span>
+        <div>
+          <div class="risk-title">IG Cash approaching allocation limit — 2% headroom</div>
+          <div class="risk-body">Treasury block active above $8.0B. Rotate IBM position (−25bps economic return) into CDX.NA.IG equivalent to free $280M headroom and improve portfolio economics.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="background:#f8f9fa;border:1px solid var(--border)">
+    <div class="card-title">What this analytics layer enables</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding-top:4px">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--tsy);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">🏛 Treasury capability built</div>
+        <ul style="font-size:11px;color:var(--txt-sec);line-height:1.8;padding-left:14px">
+          <li>Real-time entity cash positions with auto-alert</li>
+          <li>LCR attribution with driver decomposition</li>
+          <li>FTP attribution (volume / rate / curve / mix)</li>
+          <li>Funding cost change by currency &amp; entity</li>
+          <li>Business-level value creation after full FTP charge</li>
+          <li>Funding concentration monitoring with triggers</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--cpt);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">📊 CPT capability built</div>
+        <ul style="font-size:11px;color:var(--txt-sec);line-height:1.8;padding-left:14px">
+          <li>CS01 / DV01 by strategy with attribution</li>
+          <li>Hedge effectiveness tracking vs expected</li>
+          <li>Economic P&L per trade after all Treasury charges</li>
+          <li>Jump-to-default exposure by issuer</li>
+          <li>Intraday spread move P&L impact</li>
+          <li>Overnight market data pipeline into risk view</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#7a5c00;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">⚡ Combined outcome</div>
+        <ul style="font-size:11px;color:var(--txt-sec);line-height:1.8;padding-left:14px">
+          <li>Single source of truth — no dual-spreadsheet problem</li>
+          <li>Monitor → Diagnose → Act pipeline for every metric</li>
+          <li>Drill path: group → desk → product → trade → entity</li>
+          <li>Certified metric definitions across Treasury &amp; CPT</li>
+          <li>Proactive constraint alerts before breaches occur</li>
+          <li>What-if simulation for balance sheet decisions</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:10px 14px;background:linear-gradient(135deg,#001e42,#0e3560);border-radius:4px;font-size:11px;color:rgba(255,255,255,0.85);font-style:italic;line-height:1.7">
+      "My focus would be less on reproducing existing treasury reports and more on creating a trusted analytical layer that lets Treasury move from monitoring to diagnosis to action. Every major metric — liquidity, funding, FTP, balance-sheet usage, and portfolio risk — should have certified definitions, drill paths to drivers, and attribution explaining what changed and why. That is where the highest-value analytics capability sits."
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 1 — START OF DAY PULSE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="p1">
+
+  <div class="hat-bar">
+    <span class="hat-pill hat-both">🌅 Start of Day — "What did I inherit overnight?"</span>
+    <div class="hat-q">09 Jun 2026 · APAC close + Europe open observed · NY opens 09:30 ET</div>
+  </div>
+
+  <div class="kpi-row kpi-4">
+    <div class="kpi tsy">
+      <div class="kpi-label">O/N Funding Cost Change</div>
+      <div class="kpi-val val-a">+2bps</div>
+      <div class="kpi-delta d-warn">GC repo: 5.32% (▲ 2bps). FTP curves update at 08:00 ET</div>
+    </div>
+    <div class="kpi cpt">
+      <div class="kpi-label">CDX HY Move (O/N)</div>
+      <div class="kpi-val val-r">+18bps</div>
+      <div class="kpi-delta d-dn">Largest O/N widening in 3 weeks — risk-off signal</div>
+    </div>
+    <div class="kpi tsy">
+      <div class="kpi-label">USD Funding Basis (XCCY)</div>
+      <div class="kpi-val">−42bps</div>
+      <div class="kpi-delta d-warn">● Widened 3bps O/N — JPY/USD costlier to fund</div>
+    </div>
+    <div class="kpi both">
+      <div class="kpi-label">Risk-on / Risk-off Signal</div>
+      <div class="kpi-val val-a">Mild risk-off</div>
+      <div class="kpi-delta d-warn">● Spreads widen, rates rally, JPY strengthens</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        US Treasury yield curve — snapshot &amp; overnight change
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="d_ystCurve"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        Credit spread indices — overnight vs prior week
+        <span class="tag tag-cpt">CPT Hat</span>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="d_creditSprd"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        Overnight market moves — full dashboard
+        <span class="tag tag-both">Both Hats</span>
+      </div>
+      <table class="dt">
+        <thead><tr><th>Asset Class</th><th>Instrument</th><th>Level</th><th>O/N Change</th><th>Week Change</th><th>Treasury Implication</th><th>CPT Implication</th></tr></thead>
+        <tbody>
+          <tr><td>Rates</td><td>UST 2Y</td><td class="mono">4.72%</td><td class="c-g">▼ 3bps</td><td class="c-g">▼ 8bps</td><td>FTP curve shift — funding cheaper</td><td>Duration hedge gain</td></tr>
+          <tr><td>Rates</td><td>UST 10Y</td><td class="mono">4.41%</td><td class="c-g">▼ 5bps</td><td class="c-g">▼ 12bps</td><td>Asset yields compress — NII drag</td><td>Long bond book gains</td></tr>
+          <tr><td>Rates</td><td>SOFR O/N</td><td class="mono">5.31%</td><td class="c-a">Flat</td><td class="c-a">Flat</td><td>FTP base rate unchanged</td><td>CDS carry unchanged</td></tr>
+          <tr><td>Rates</td><td>GC Repo O/N</td><td class="mono">5.32%</td><td class="c-r">▲ 2bps</td><td class="c-r">▲ 5bps</td><td>Repo funding more expensive</td><td>Carry on repo-funded trades increases</td></tr>
+          <tr><td>Credit</td><td>CDX IG 5Y</td><td class="mono">68bps</td><td class="c-r">▲ 4bps</td><td class="c-r">▲ 9bps</td><td>IG asset values decline</td><td>IG cash book P&amp;L −$6M</td></tr>
+          <tr><td>Credit</td><td>CDX HY 5Y</td><td class="mono">342bps</td><td class="c-r">▲ 18bps</td><td class="c-r">▲ 31bps</td><td>Limited direct Treasury impact</td><td>HY book P&amp;L −$12M ⚠</td></tr>
+          <tr><td>Credit</td><td>iTraxx Main</td><td class="mono">74bps</td><td class="c-r">▲ 3bps</td><td class="c-r">▲ 7bps</td><td>European book hedging cost rises</td><td>EU exposure partially hedged</td></tr>
+          <tr><td>FX</td><td>USD/JPY</td><td class="mono">156.82</td><td class="c-r">▲ 0.42%</td><td class="c-r">▲ 1.1%</td><td>Tokyo entity sees JPY value drop</td><td>EM USD/JPY carry impacted</td></tr>
+          <tr><td>FX</td><td>XCCY USD/JPY</td><td class="mono">−42bps</td><td class="c-r">▼ 3bps</td><td class="c-r">▼ 7bps</td><td>USD funding from Japan costlier</td><td>JPY-funded USD trades costlier</td></tr>
+          <tr><td>FX</td><td>USD/CNH</td><td class="mono">7.2441</td><td class="c-r">▲ 0.18%</td><td class="c-r">▲ 0.6%</td><td>CNH liquidity buffer value rises</td><td>EM bond portfolio FX neutral</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        O/N funding cost implications — Treasury assessment
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <div style="padding-top:4px">
+        <div class="risk-row">
+          <span class="dot r"></span>
+          <div>
+            <div class="risk-title">Repo rate +2bps raises intraday funding cost by ~$0.3M</div>
+            <div class="risk-body">CPT's $4.8B repo book is more expensive to roll. FTP curves will be updated at 08:30 ET to reflect. Marginal change favours overnight-funded CDS vs longer-tenor cash bonds.</div>
+          </div>
+        </div>
+        <div class="risk-row">
+          <span class="dot a"></span>
+          <div>
+            <div class="risk-title">UST 5bps rally — asset yields compress</div>
+            <div class="risk-body">Banking book reinvestment yield falls. However, FTP funding cost also falls — net NII impact approximately −$1.2M annualised per $1B in fixed-rate assets. Curve steepened 1bp 2Y-10Y.</div>
+          </div>
+        </div>
+        <div class="risk-row">
+          <span class="dot a"></span>
+          <div>
+            <div class="risk-title">XCCY basis widens — JPY and CNH funding more expensive</div>
+            <div class="risk-body">3bps widening in USD/JPY basis increases cost of USD funding sourced from Tokyo. Tokyo entity has intercompany funding; escalate if basis persists above −45bps for 2+ days.</div>
+          </div>
+        </div>
+        <div class="risk-row">
+          <span class="dot g"></span>
+          <div>
+            <div class="risk-title">Risk-off signal: positive for HQLA book</div>
+            <div class="risk-body">Flight-to-quality UST rally increases mark-to-market value of HQLA buffer by ~$180M. LCR unaffected (already Level 1). Liquidity buffer stronger entering the day.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 2 — TREASURY OPERATIONS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="p2">
+
+  <div class="hat-bar">
+    <span class="hat-pill hat-tsy">🏛 Treasury Hat — "What do I have, and what is changing right now?"</span>
+    <div class="hat-q">Cash positions · LCR/NSFR · Funding concentration · Intraday cash flows</div>
+  </div>
+
+  <div class="kpi-row kpi-4">
+    <div class="kpi tsy"><div class="kpi-label">Net Cash (Group)</div><div class="kpi-val val-g">+$6.2B</div><div class="kpi-delta d-warn">⚠ Tokyo entity −$0.5B USD gap</div></div>
+    <div class="kpi tsy"><div class="kpi-label">LCR (current)</div><div class="kpi-val val-g">134%</div><div class="kpi-delta d-up">Internal min 115% — buffer: 19pp</div></div>
+    <div class="kpi tsy"><div class="kpi-label">NSFR</div><div class="kpi-val val-g">121%</div><div class="kpi-delta d-up">Min 100% — comfortable</div></div>
+    <div class="kpi tsy"><div class="kpi-label">Unencumbered HQLA</div><div class="kpi-val">$28.4B</div><div class="kpi-delta d-neu">Level 1: 83% · Survival: 47 days</div></div>
+  </div>
+
+  <!-- Entity cash positions -->
+  <div style="margin-bottom:12px">
+    <div class="card-title" style="border:none;padding:0;margin-bottom:8px">
+      <span>Cash position by entity &amp; currency <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--txt-mute)">— can everyone fund themselves today?</span></span>
+      <span class="tag tag-tsy">Treasury Hat</span>
+    </div>
+    <div class="entity-grid">
+      <div class="entity-item ok">
+        <div class="entity-name">🗽 New York</div>
+        <div class="entity-pos val-g">+$3.4B</div>
+        <div class="entity-ccy">USD · Primary entity</div>
+        <div class="entity-sub">✓ Fully funded. Intercompany transfer capacity $1.2B available.</div>
+      </div>
+      <div class="entity-item ok">
+        <div class="entity-name">🇸🇬 Singapore</div>
+        <div class="entity-pos val-g">+$2.1B</div>
+        <div class="entity-ccy">USD equivalent · APAC hub</div>
+        <div class="entity-sub">✓ Surplus. SGD/USD swap book in balance. No action needed.</div>
+      </div>
+      <div class="entity-item ok">
+        <div class="entity-name">🇬🇧 London</div>
+        <div class="entity-pos val-g">+$1.2B</div>
+        <div class="entity-ccy">USD equivalent · EUR/GBP book</div>
+        <div class="entity-sub">✓ Comfortable. XCCY book hedged. iTraxx hedge covers EU credit.</div>
+      </div>
+      <div class="entity-item warn">
+        <div class="entity-name">🇯🇵 Tokyo</div>
+        <div class="entity-pos val-r">−$0.5B</div>
+        <div class="entity-ccy">USD equivalent · JPY book</div>
+        <div class="entity-sub">⚠ USD deficit. Bond settlement lag + JPY/USD 0.42% move. Intercompany draw required before 15:00 JST.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        Funding concentration — who provides our funding?
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <div class="chart-wrap" style="height:170px"><canvas id="d_fundConc"></canvas></div>
+      <div style="margin-top:10px;font-size:11px;background:#fff8f0;border-left:3px solid #e65100;padding:7px 10px;border-radius:0 3px 3px 0;color:#5a2000">
+        Wholesale funding at 25%: within limit but elevated. Top-3 wholesale counterparties = 16.8% of total. One departure would require $2.1B overnight replacement.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        Intraday cash flow — settlements, margins, maturities
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <div class="chart-wrap" style="height:170px"><canvas id="d_cashFlow"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        Liquidity consumption by business — who is using balance sheet?
+        <span class="tag tag-tsy">Treasury Hat — FTP charges calibrated here</span>
+      </div>
+      <div class="mb-row" style="margin-top:4px">
+        <div class="mb-label">Credit Portfolio Trading</div>
+        <div class="mb-track"><div class="mb-fill" style="width:73%;background:#002855"></div></div>
+        <div class="mb-val c-a">$18.4B / $25B</div>
+      </div>
+      <div class="mb-row">
+        <div class="mb-label">Rates Trading</div>
+        <div class="mb-track"><div class="mb-fill" style="width:88%;background:#e65100"></div></div>
+        <div class="mb-val c-r">$31.2B / $35B</div>
+      </div>
+      <div class="mb-row">
+        <div class="mb-label">Prime Finance</div>
+        <div class="mb-track"><div class="mb-fill" style="width:94%;background:#b71c1c"></div></div>
+        <div class="mb-val c-r">$28.2B / $30B ⚠</div>
+      </div>
+      <div class="mb-row">
+        <div class="mb-label">FI Origination</div>
+        <div class="mb-track"><div class="mb-fill" style="width:61%;background:#1a5276"></div></div>
+        <div class="mb-val">$9.8B / $16B</div>
+      </div>
+      <div class="mb-row">
+        <div class="mb-label">Securitisation</div>
+        <div class="mb-track"><div class="mb-fill" style="width:44%;background:#1a5276"></div></div>
+        <div class="mb-val">$5.3B / $12B</div>
+      </div>
+      <div class="mb-row">
+        <div class="mb-label">Treasury (own book)</div>
+        <div class="mb-track"><div class="mb-fill" style="width:38%;background:#5b7fa6"></div></div>
+        <div class="mb-val">$10.8B / $28B</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        FTP value creation — does the business cover its full cost?
+        <span class="tag tag-tsy">Treasury Hat — who creates vs destroys value?</span>
+      </div>
+      <table class="dt">
+        <thead><tr><th>Business</th><th>Gross Rev</th><th>FTP Charge</th><th>After FTP</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>HY Cash</td><td class="c-g">+$12.8M</td><td class="c-r">−$6.0M</td><td class="c-g">+$6.8M</td><td><span class="badge badge-g">Value Add</span></td></tr>
+          <tr><td>CPT (index CDS)</td><td class="c-g">+$7.6M</td><td class="c-r">−$2.3M</td><td class="c-g">+$5.3M</td><td><span class="badge badge-g">Value Add</span></td></tr>
+          <tr><td>EM Bonds</td><td class="c-g">+$9.4M</td><td class="c-r">−$4.7M</td><td class="c-g">+$4.7M</td><td><span class="badge badge-g">Value Add</span></td></tr>
+          <tr><td>IG Cash</td><td class="c-g">+$18.2M</td><td class="c-r">−$11.8M</td><td class="c-g">+$6.4M</td><td><span class="badge badge-g">Value Add</span></td></tr>
+          <tr><td>SN CDS</td><td class="c-g">+$3.2M</td><td class="c-r">−$1.2M</td><td class="c-g">+$2.0M</td><td><span class="badge badge-g">Value Add</span></td></tr>
+          <tr><td>Structured Credit</td><td class="c-g">+$12.6M</td><td class="c-r">−$14.4M</td><td class="c-r">−$1.8M</td><td><span class="badge badge-r">Value Destroy</span></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;font-size:11px;background:var(--red-bg);border-left:3px solid var(--red);padding:7px 10px;border-radius:0 3px 3px 0;color:#5a0000">
+        Structured Credit: +$50M gross revenue but −$14M FTP charge → true contribution −$2M. This is the insight that requires the analytics layer to surface.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 3 — CPT RISK DASHBOARD
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="p3">
+
+  <div class="hat-bar">
+    <span class="hat-pill hat-cpt">📊 CPT Hat — "Where can I lose money today, and are my hedges working?"</span>
+    <div class="hat-q">CS01 · DV01 · Jump-to-default · Hedge effectiveness</div>
+  </div>
+
+  <div class="kpi-row kpi-4">
+    <div class="kpi cpt">
+      <div class="kpi-label">Total DV01</div>
+      <div class="kpi-val val-a">−$4.8M/bp</div>
+      <div class="kpi-delta d-warn">▼ UST 5bp rally → +$24M book gain today</div>
+    </div>
+    <div class="kpi cpt">
+      <div class="kpi-label">CS01 (IG book)</div>
+      <div class="kpi-val val-a">−$2.1M/bp</div>
+      <div class="kpi-delta d-dn">CDX IG +4bps O/N → −$8.4M unrealised</div>
+    </div>
+    <div class="kpi cpt">
+      <div class="kpi-label">CS01 (HY book)</div>
+      <div class="kpi-val val-r">−$1.8M/bp</div>
+      <div class="kpi-delta d-dn">CDX HY +18bps O/N → −$12M unrealised ⚠</div>
+    </div>
+    <div class="kpi both">
+      <div class="kpi-label">Net P&amp;L impact today</div>
+      <div class="kpi-val scen-val" data-base="+$3.6M" data-adverse="−$14.2M" data-severe="−$41.8M">+$3.6M</div>
+      <div class="kpi-delta d-neu scen-lbl" data-base="Rates rally offset spread widening" data-adverse="Credit spread dominates" data-severe="Severe credit + funding shock">Rates rally offset spread widening</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        CS01 exposure by strategy vs hedge ($M per bp)
+        <span class="tag tag-cpt">CPT Hat</span>
+      </div>
+      <div class="chart-wrap" style="height:210px"><canvas id="d_cs01"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        Credit spread intraday P&amp;L attribution ($M)
+        <span class="tag tag-cpt">CPT Hat</span>
+      </div>
+      <div class="chart-wrap" style="height:210px"><canvas id="d_spreadPL"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        Hedge effectiveness — are CDS hedges performing as expected?
+        <span class="tag tag-cpt">CPT Hat</span>
+      </div>
+      <div style="margin-bottom:12px">
+        <div class="mb-row"><div class="mb-label">IG cash → CDX.IG hedge</div><div class="mb-track"><div class="mb-fill" style="width:94%;background:#002855"></div></div><div class="mb-val c-g">94% effective</div></div>
+        <div class="mb-row"><div class="mb-label">HY cash → CDX.HY hedge</div><div class="mb-track"><div class="mb-fill" style="width:78%;background:#e65100"></div></div><div class="mb-val c-a">78% effective ⚠</div></div>
+        <div class="mb-row"><div class="mb-label">EM bonds → iTraxx EM</div><div class="mb-track"><div class="mb-fill" style="width:88%;background:#1a5276"></div></div><div class="mb-val c-g">88% effective</div></div>
+        <div class="mb-row"><div class="mb-label">SN CDS self-hedge</div><div class="mb-track"><div class="mb-fill" style="width:97%;background:#002855"></div></div><div class="mb-val c-g">97% effective</div></div>
+        <div class="mb-row"><div class="mb-label">IRS duration hedge</div><div class="mb-track"><div class="mb-fill" style="width:96%;background:#002855"></div></div><div class="mb-val c-g">96% effective</div></div>
+      </div>
+      <div style="background:var(--amber-bg);border-left:3px solid #e65100;padding:7px 10px;border-radius:0 3px 3px 0;font-size:11px;color:#5a2000">
+        HY hedge effectiveness at 78%: CDX HY +18bps widening but specific-name HY book widened further. Idiosyncratic risk not captured by index hedge. Review single-name CDS coverage on top-5 HY positions.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        Jump-to-default &amp; tail risk — largest single exposures
+        <span class="tag tag-cpt">CPT Hat</span>
+      </div>
+      <table class="dt">
+        <thead><tr><th>Issuer</th><th>Exposure</th><th>JtD (no recovery)</th><th>JtD (40% rec.)</th><th>CDS cover</th><th>Net JtD</th></tr></thead>
+        <tbody>
+          <tr><td>Ford Motor</td><td>$185M</td><td class="c-r">−$185M</td><td class="c-r">−$111M</td><td class="c-g">+$150M SN CDS</td><td class="c-a">−$39M</td></tr>
+          <tr><td>Hertz Holdings</td><td>$95M</td><td class="c-r">−$95M</td><td class="c-r">−$57M</td><td class="c-g">+$50M SN CDS</td><td class="c-a">−$45M</td></tr>
+          <tr><td>Brazil Sovereign</td><td>$200M</td><td class="c-r">−$200M</td><td class="c-r">−$120M</td><td>None</td><td class="c-r">−$120M</td></tr>
+          <tr><td>Pemex</td><td>$115M</td><td class="c-r">−$115M</td><td class="c-r">−$69M</td><td class="c-a">+$30M SN CDS</td><td class="c-r">−$84M</td></tr>
+          <tr><td>CLO Mezz pool</td><td>$125M</td><td class="c-r">−$125M</td><td class="c-r">−$50M</td><td>None (index proxy)</td><td class="c-r">−$50M</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:8px;font-size:11px;color:var(--txt-sec)">
+        Largest uncovered JtD: Brazil Sovereign (−$120M). Pemex SN CDS coverage thin at only 26%. Both positions within portfolio limits but flagged for review given risk-off environment.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 4 — EOD ATTRIBUTION
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="p4">
+
+  <div class="hat-bar">
+    <span class="hat-pill hat-both">🌇 End of Day — "How did we finish, what moved, and why?"</span>
+    <div class="hat-q">FTP attribution · LCR attribution · Balance sheet delta · Funding cost change</div>
+  </div>
+
+  <div class="kpi-row kpi-4">
+    <div class="kpi tsy"><div class="kpi-label">BS Delta vs Yesterday</div><div class="kpi-val val-a">+$410M</div><div class="kpi-delta d-warn">● CPT inventory build (IG cash)</div></div>
+    <div class="kpi tsy"><div class="kpi-label">LCR Delta Today</div><div class="kpi-val val-g">+0pp</div><div class="kpi-delta d-neu">Flows offset: see attribution below</div></div>
+    <div class="kpi both"><div class="kpi-label">FTP Attribution Net</div><div class="kpi-val val-r">−$2.1M</div><div class="kpi-delta d-dn">Rate movement effect dominates</div></div>
+    <div class="kpi cpt"><div class="kpi-label">Econ. P&amp;L vs Prior Day</div><div class="kpi-val val-g">+$3.2M</div><div class="kpi-delta d-up">Rates rally offset spread widening</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        FTP P&amp;L attribution — why did Treasury P&amp;L move?
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <div style="padding:4px 0 8px">
+        <div class="attr-row">
+          <div class="attr-label">Yesterday FTP P&amp;L</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:45%;background:var(--steel)"></div></div>
+          <div class="attr-val c-n">$14.8M</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">+ Volume effect</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:18%"></div></div>
+          <div class="attr-val c-g">+$2.1M</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">− Rate movement effect</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-neg" style="width:32%"></div></div>
+          <div class="attr-val c-r">−$3.8M</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">− Curve shape effect</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-neg" style="width:12%"></div></div>
+          <div class="attr-val c-r">−$1.2M</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">+ Business mix effect</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:8%"></div></div>
+          <div class="attr-val c-g">+$0.8M</div>
+        </div>
+        <div style="border-top:1.5px solid var(--border);margin:8px 0"></div>
+        <div class="attr-row">
+          <div class="attr-label" style="font-weight:600;color:var(--navy)">= Today FTP P&amp;L</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:42%;background:#002855"></div></div>
+          <div class="attr-val c-n">$12.7M</div>
+        </div>
+      </div>
+      <div style="font-size:11px;background:#f5f7fa;border-left:3px solid var(--steel);padding:7px 10px;border-radius:0 3px 3px 0;color:var(--txt-sec);margin-top:4px">
+        Rate movement effect (−$3.8M): UST 5bp rally compressed asset yields faster than FTP curves adjusted. Structural lag in FTP repricing; update curves at EOD.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        LCR attribution — what drove the LCR movement today?
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <div style="padding:4px 0 8px">
+        <div class="attr-row">
+          <div class="attr-label">LCR at open</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:40%;background:var(--steel)"></div></div>
+          <div class="attr-val c-n">134pp</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">− Deposit outflows</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-neg" style="width:46%"></div></div>
+          <div class="attr-val c-r">−5pp</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">+ HQLA increase (UST rally)</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:27%"></div></div>
+          <div class="attr-val c-g">+3pp</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">+ New wholesale funding</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:18%"></div></div>
+          <div class="attr-val c-g">+2pp</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">− CPT repo book growth</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-neg" style="width:9%"></div></div>
+          <div class="attr-val c-r">−1pp</div>
+        </div>
+        <div class="attr-row">
+          <div class="attr-label">+ Derivative margin settled</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:9%"></div></div>
+          <div class="attr-val c-g">+1pp</div>
+        </div>
+        <div style="border-top:1.5px solid var(--border);margin:8px 0"></div>
+        <div class="attr-row">
+          <div class="attr-label" style="font-weight:600;color:var(--navy)">= LCR at 14:00 ET</div>
+          <div class="attr-bar-wrap"><div class="attr-bar-pos" style="width:40%;background:#002855"></div></div>
+          <div class="attr-val c-n">134pp</div>
+        </div>
+      </div>
+      <div style="font-size:11px;background:var(--green-bg);border-left:3px solid var(--green);padding:7px 10px;border-radius:0 3px 3px 0;color:#1a3a1a;margin-top:4px">
+        Net LCR unchanged despite $5B deposit outflow — HQLA value gain (UST rally) and new funding exactly offset. Fortuitous today; not a structural hedge. Monitor deposit trend closely.
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">
+        Balance sheet delta — assets vs liabilities changes vs yesterday
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <div class="chart-wrap" style="height:175px"><canvas id="d_bsDelta"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        Funding cost by entity &amp; currency — did cost increase?
+        <span class="tag tag-tsy">Treasury Hat</span>
+      </div>
+      <table class="dt">
+        <thead><tr><th>Entity</th><th>Currency</th><th>FTP Rate</th><th>Δ vs Yesterday</th><th>Δ vs Month Ago</th><th>Driver</th></tr></thead>
+        <tbody>
+          <tr><td>New York</td><td>USD</td><td class="mono">5.39%</td><td class="c-r">+2bps</td><td class="c-r">+8bps</td><td>GC repo +2bps</td></tr>
+          <tr><td>London</td><td>EUR</td><td class="mono">3.71%</td><td class="c-a">+0bps</td><td class="c-g">−3bps</td><td>ECB rate stable</td></tr>
+          <tr><td>London</td><td>GBP</td><td class="mono">4.95%</td><td class="c-a">+0bps</td><td class="c-r">+4bps</td><td>BoE hold</td></tr>
+          <tr><td>Singapore</td><td>USD</td><td class="mono">5.41%</td><td class="c-r">+2bps</td><td class="c-r">+10bps</td><td>XCCY USD scarcity</td></tr>
+          <tr><td>Tokyo</td><td>USD</td><td class="mono">5.47%</td><td class="c-r">+5bps</td><td class="c-r">+14bps</td><td>XCCY basis −3bps ⚠</td></tr>
+          <tr><td>Tokyo</td><td>JPY</td><td class="mono">0.42%</td><td class="c-g">+0bps</td><td class="c-r">+8bps</td><td>BoJ rate adjustment</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 5 — MONITOR → DIAGNOSE → ACT
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="p5">
+
+  <div class="hat-bar">
+    <span class="hat-pill hat-both">⚡ Monitoring → Diagnosis → Action</span>
+    <div class="hat-q">"Can this person understand what's happening, why it's happening, and what action to take?"</div>
+  </div>
+
+  <div class="kpi-row kpi-4">
+    <div class="kpi both"><div class="kpi-label">Issues identified</div><div class="kpi-val">5</div><div class="kpi-delta d-neu">Across both hats</div></div>
+    <div class="kpi"><div class="kpi-label">Actions flagged</div><div class="kpi-val">5</div><div class="kpi-delta d-neu">3 urgent · 2 tactical</div></div>
+    <div class="kpi"><div class="kpi-label">Urgent (act today)</div><div class="kpi-val val-r">3</div></div>
+    <div class="kpi"><div class="kpi-label">Tactical (act this week)</div><div class="kpi-val val-a">2</div></div>
+  </div>
+
+  <!-- Framework header -->
+  <div class="card card-mb" style="background:linear-gradient(135deg,#001e42,#0e3560);color:#fff;border:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;text-align:center">
+      <div style="padding:10px 16px;border-right:1px solid rgba(255,255,255,0.15)">
+        <div style="font-size:18px;margin-bottom:4px">👁</div>
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:0.04em">MONITOR</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:4px">LCR · Liquidity position · Funding cost · Credit spreads</div>
+      </div>
+      <div style="padding:10px 16px;border-right:1px solid rgba(255,255,255,0.15)">
+        <div style="font-size:18px;margin-bottom:4px">🔍</div>
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:0.04em">DIAGNOSE</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:4px">What changed · Which desk · Which product · Which entity</div>
+      </div>
+      <div style="padding:10px 16px">
+        <div style="font-size:18px;margin-bottom:4px">⚡</div>
+        <div style="font-size:12px;font-weight:600;color:var(--gold);letter-spacing:0.04em">ACT</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:4px">Raise funding · Transfer liquidity · Adjust FTP · Hedge · Reduce BS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action items -->
+  <div class="action-item sev-r">
+    <div class="action-header">
+      <div class="action-icon">🔴</div>
+      <div class="action-title">Tokyo USD cash deficit — must fund before Asia close</div>
+      <span class="badge badge-r">Urgent — act by 16:00 ET</span>
+      <span class="hat-pill hat-tsy" style="margin-left:8px;font-size:10px">🏛 Treasury Hat</span>
+    </div>
+    <div class="action-body">
+      <div class="action-col">
+        <div class="action-col-title">👁 Monitor — what was observed</div>
+        <div class="action-col-body">Tokyo entity showing <strong>−$0.5B USD cash deficit</strong> at 14:00 ET. Bond settlement lag ($0.3B) compounded by USD/JPY moving +0.42% overnight, reducing USD equivalent of JPY assets.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">🔍 Diagnose — root cause &amp; attribution</div>
+        <div class="action-col-body">Cause: <strong>settlement lag</strong> (Nomura USD bond T+2) + <strong>FX move</strong>. Intercompany USD credit line has $1.2B available from NY entity. Not a structural funding problem — one-day timing issue.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">⚡ Act — what to do</div>
+        <div class="action-col-body">1. Draw <strong>$0.5B intercompany USD</strong> from New York entity.<br>2. Book <strong>USD/JPY FX swap</strong> to hedge FX risk on transfer (1-week tenor).<br>3. Update Tokyo FTP allocation for intraday cost. Close by 16:00 ET.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item sev-r">
+    <div class="action-header">
+      <div class="action-icon">🔴</div>
+      <div class="action-title">CDX HY +18bps — HY book hedge coverage insufficient</div>
+      <span class="badge badge-r">Urgent — position risk today</span>
+      <span class="hat-pill hat-cpt" style="margin-left:8px;font-size:10px">📊 CPT Hat</span>
+    </div>
+    <div class="action-body">
+      <div class="action-col">
+        <div class="action-col-title">👁 Monitor — what was observed</div>
+        <div class="action-col-body">CDX HY widened <strong>18bps overnight</strong>, largest single-day move in 3 weeks. HY cash book ($3.1B long) generated <strong>−$12M unrealised P&L</strong>. HY hedge effectiveness only 78%.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">🔍 Diagnose — root cause &amp; attribution</div>
+        <div class="action-col-body">CDX HY index moved on <strong>macro risk-off</strong> (Asia PMI miss). However, <strong>specific-name widening</strong> (Ford, Hertz) exceeded index by 6–12bps. Index hedge doesn't capture idiosyncratic risk. Basis widened 22bps.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">⚡ Act — what to do</div>
+        <div class="action-col-body">1. Add <strong>$200M CDX HY protection</strong> (buy protection) to reduce directional exposure.<br>2. Review <strong>Ford and Hertz SN CDS</strong> coverage — increase to 80%+ of notional.<br>3. If risk-off persists: trim $300M HY cash via secondary market.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item sev-r">
+    <div class="action-header">
+      <div class="action-icon">🔴</div>
+      <div class="action-title">IG Cash at 98% of Treasury limit — position growth blocked</div>
+      <span class="badge badge-r">Urgent — trading constrained now</span>
+      <span class="hat-pill hat-both" style="margin-left:8px;font-size:10px">⚡ Both Hats</span>
+    </div>
+    <div class="action-body">
+      <div class="action-col">
+        <div class="action-col-title">👁 Monitor — what was observed</div>
+        <div class="action-col-body">IG Cash desk at <strong>$7.84B / $8.0B Treasury limit</strong>. New positions blocked without Treasury pre-approval. Two IBM positions showing <strong>negative economic return</strong> (−25bps after FTP) but still consuming allocation.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">🔍 Diagnose — root cause &amp; attribution</div>
+        <div class="action-col-body">IBM 4.25% 2032 ($280M): <strong>low spread + high FTP charge</strong> (long tenor, high funding cost) = −25bps economic return. Position was added when funding was cheaper; now balance-sheet negative. Blocks more attractive opportunities.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">⚡ Act — what to do</div>
+        <div class="action-col-body">1. <strong>Sell IBM 4.25% 2032</strong> ($280M) in secondary — frees $280M allocation.<br>2. Replace with <strong>CDX.NA.IG equivalent</strong> exposure — same credit risk, ~2% balance sheet usage vs 100%.<br>3. Estimated economic P&L improvement: +$2.1M annually.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item sev-a">
+    <div class="action-header">
+      <div class="action-icon">🟡</div>
+      <div class="action-title">Structured Credit: economically value-destroying after FTP — tactical rotation needed</div>
+      <span class="badge badge-a">Tactical — act this week</span>
+      <span class="hat-pill hat-both" style="margin-left:8px;font-size:10px">⚡ Both Hats</span>
+    </div>
+    <div class="action-body">
+      <div class="action-col">
+        <div class="action-col-title">👁 Monitor — what was observed</div>
+        <div class="action-col-body">Structured Credit desk shows <strong>+$12.6M gross P&L</strong> but <strong>−$14.4M FTP charge</strong> → net contribution −$1.8M. Elevated liquidity premium (+58bps) and capital charge (+48bps) erode spread income completely.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">🔍 Diagnose — root cause &amp; attribution</div>
+        <div class="action-col-body">CLO collateral <strong>haircut increased</strong> by Treasury (repo market stress on structured product). Liquidity premium charge elevated. CLO Mezz A- and ABS Auto AAA both below −1bps economic return. Liquidity cost alone = 58bps on structured notional.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">⚡ Act — what to do</div>
+        <div class="action-col-body">1. <strong>Reduce CLO Mezz position</strong> by $80M (worst offender).<br>2. <strong>Substitute CLO repo collateral</strong> with UST to reduce HQLA haircut and improve LCR drag.<br>3. Review FTP methodology with desk head — ensure charge is understood and priced into new trades.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item sev-a">
+    <div class="action-header">
+      <div class="action-icon">🟡</div>
+      <div class="action-title">LCR drag from CPT at 76% of Treasury limit — early warning before breach</div>
+      <span class="badge badge-a">Tactical — monitor daily</span>
+      <span class="hat-pill hat-tsy" style="margin-left:8px;font-size:10px">🏛 Treasury Hat</span>
+    </div>
+    <div class="action-body">
+      <div class="action-col">
+        <div class="action-col-title">👁 Monitor — what was observed</div>
+        <div class="action-col-body">CPT's combined repo + structured credit positions generating <strong>−3.8pp LCR drag</strong> vs −5.0pp Treasury limit. Only <strong>1.2pp headroom</strong> remaining. Trend: growing 0.3pp per week.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">🔍 Diagnose — root cause &amp; attribution</div>
+        <div class="action-col-body">Two drivers: (1) <strong>Repo book grew $280M today</strong> (funding the IG cash build). (2) <strong>CLO repo haircut</strong> increased, reducing HQLA-eligible collateral. Both compress LCR. At current trend, breach in ~4 days.</div>
+      </div>
+      <div class="action-col">
+        <div class="action-col-title">⚡ Act — what to do</div>
+        <div class="action-col-body">1. <strong>Cap repo book</strong> at current level — no new repo until IG cash rotates to CDS.<br>2. Substitute CLO collateral with <strong>UST in repo</strong> — improves HQLA contribution by ~0.4pp.<br>3. Set <strong>automated alert at −4.5pp</strong> to trigger escalation 0.5pp before limit.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<div class="footer">
+  <span>Demo Bank &amp; Co. · Head of CIB Treasury &amp; CPT — Dual-Hat Analytics Command · Internal use only · Restricted</span>
+  <span class="footer-m">MOCKUP ONLY — Illustrative data, not representative of actual positions or disclosures</span>
+</div>
+
+
+<script>
+// ── NAVIGATION ──────────────────────────────────────────────────
+document.getElementById('nav').addEventListener('click', e => {
+  const t = e.target.closest('.nav-tab');
+  if (!t) return;
+  document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.page).classList.add('active');
+});
+
+// ── SCENARIO TOGGLE ──────────────────────────────────────────────
+function setScen(btn, scen) {
+  document.querySelectorAll('.scen-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.scen-val').forEach(el => {
+    el.textContent = el.dataset[scen];
+    el.style.color = scen==='base' ? '' : scen==='adverse' ? '#bf360c' : '#b71c1c';
+  });
+  document.querySelectorAll('.scen-lbl').forEach(el => {
+    el.textContent = el.dataset[scen];
+  });
+}
+
+// ── CHART CONSTANTS ──────────────────────────────────────────────
+const NAVY  = '#002855', NAVY2 = '#1a5276', STEEL = '#5b7fa6';
+const GOLD  = '#D4A843', CPT   = '#14532d', TSY   = '#1e3a5f';
+const GRN   = '#2e7d32', GRN_L = '#81c784';
+const AMB_L = '#ffb74d', RED_L = '#e57373';
+
+const defOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  animation: { duration: 500 }
+};
+function mk(id, type, labels, datasets, extra={}) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  new Chart(el, { type, data:{labels,datasets}, options:{...defOpts,...extra} });
+}
+
+// ── PAGE 0: FTP VALUE CREATION ────────────────────────────────────
+mk('d_ftpValue', 'bar',
+  ['HY Cash','CDX Index','EM Bonds','IG Cash','SN CDS','Structured'],
+  [
+    { label:'Gross P&L ($M)', data:[12.8,7.6,9.4,18.2,3.2,12.6], backgroundColor:'rgba(0,40,85,0.25)', borderRadius:3 },
+    { label:'After-FTP ($M)', data:[6.8,5.3,4.7,6.4,2.0,-1.8],   backgroundColor: ctx=>ctx.raw>=0?NAVY:RED_L, borderRadius:3 }
+  ],
+  {
+    plugins:{ legend:{ display:true, labels:{ font:{size:10}, boxWidth:10, padding:8 } } },
+    scales:{
+      y:{ ticks:{ callback:v=>'$'+v+'M', font:{size:10} }, grid:{color:'rgba(0,0,0,0.04)'} },
+      x:{ grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+);
+
+// ── PAGE 1: YIELD CURVE ───────────────────────────────────────────
+const tenors = ['O/N','1M','3M','6M','1Y','2Y','3Y','5Y','7Y','10Y','30Y'];
+mk('d_ystCurve', 'line', tenors,
+  [
+    { label:'Today',     data:[5.31,5.28,5.20,5.02,4.88,4.72,4.65,4.58,4.50,4.41,4.35], borderColor:NAVY, tension:0.3, pointRadius:2 },
+    { label:'Yesterday', data:[5.31,5.29,5.22,5.05,4.91,4.75,4.68,4.63,4.55,4.46,4.40], borderColor:STEEL, tension:0.3, pointRadius:2, borderDash:[4,3] }
+  ],
+  {
+    plugins:{ legend:{ display:true, labels:{ font:{size:10}, boxWidth:10, padding:8 } } },
+    scales:{
+      y:{ min:4.2, max:5.5, ticks:{ callback:v=>v.toFixed(2)+'%', font:{size:10} }, grid:{color:'rgba(0,0,0,0.04)'} },
+      x:{ grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+);
+
+// ── PAGE 1: CREDIT SPREADS ────────────────────────────────────────
+const days5 = ['Mon','Tue','Wed','Thu','Fri (today)'];
+mk('d_creditSprd', 'line', days5,
+  [
+    { label:'CDX IG 5Y (bps)', data:[59,61,63,64,68], borderColor:NAVY, tension:0.3, pointRadius:3, yAxisID:'y' },
+    { label:'CDX HY 5Y (bps)', data:[311,318,323,324,342], borderColor:RED_L, tension:0.3, pointRadius:3, yAxisID:'y2' }
+  ],
+  {
+    plugins:{ legend:{ display:true, labels:{ font:{size:10}, boxWidth:10, padding:8 } } },
+    scales:{
+      y:  { position:'left',  min:55, max:75,  ticks:{ callback:v=>v+'bps (IG)',  font:{size:9} }, grid:{color:'rgba(0,0,0,0.04)'} },
+      y2: { position:'right', min:300, max:360, ticks:{ callback:v=>v+'bps (HY)', font:{size:9} }, grid:{display:false} },
+      x:  { grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+);
+
+// ── PAGE 2: FUNDING CONCENTRATION ────────────────────────────────
+mk('d_fundConc', 'doughnut',
+  ['Corporate deposits','Wholesale funding','Repo','Intercompany'],
+  [{ data:[35,25,15,25], backgroundColor:[NAVY,NAVY2,RED_L,STEEL], borderWidth:2, borderColor:'#fff', hoverOffset:5 }],
+  { plugins:{ legend:{ display:true, position:'right', labels:{ font:{size:11}, boxWidth:12, padding:10 } } }, cutout:'55%' }
+);
+
+// ── PAGE 2: INTRADAY CASH FLOWS ───────────────────────────────────
+const HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00'];
+mk('d_cashFlow', 'bar', HOURS,
+  [
+    { label:'Inflows',  data:[1.8,2.4,3.1,2.9,1.7,2.3,1.6,1.9], backgroundColor: GRN_L, stack:'cf' },
+    { label:'Outflows', data:[-2.1,-2.8,-3.4,-3.2,-2.1,-2.5,-1.9,-2.2], backgroundColor: RED_L, stack:'cf' }
+  ],
+  {
+    plugins:{ legend:{ display:true, labels:{ font:{size:10}, boxWidth:10, padding:8 } } },
+    scales:{
+      y:{ stacked:true, ticks:{ callback:v=>'$'+v+'B', font:{size:10} }, grid:{color:'rgba(0,0,0,0.04)'} },
+      x:{ stacked:true, grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+);
+
+// ── PAGE 3: CS01 BY STRATEGY ──────────────────────────────────────
+mk('d_cs01', 'bar',
+  ['IG Cash','HY Cash','EM Bonds','CDX Index','SN CDS','Struct.'],
+  [
+    { label:'Gross CS01 ($M/bp)', data:[-2.8,-1.9,-1.2,-1.8,-0.4,-0.6], backgroundColor: RED_L, borderRadius:3 },
+    { label:'Hedge CS01 ($M/bp)', data:[1.8,0.9,0.6,1.4,0.4,0.3],       backgroundColor: GRN_L, borderRadius:3 }
+  ],
+  {
+    plugins:{ legend:{ display:true, labels:{ font:{size:10}, boxWidth:10, padding:8 } } },
+    scales:{
+      y:{ ticks:{ callback:v=>'$'+v+'M', font:{size:10} }, grid:{color:'rgba(0,0,0,0.04)'} },
+      x:{ grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+);
+
+// ── PAGE 3: SPREAD P&L INTRADAY ───────────────────────────────────
+mk('d_spreadPL', 'line', HOURS,
+  [
+    { label:'Cumulative spread P&L ($M)', data:[-18,-21,-20,-19,-18,-16,-14,-13], borderColor:RED_L, fill:true, backgroundColor:'rgba(229,115,115,0.08)', tension:0.35, pointRadius:3 },
+    { label:'DV01 gain from rates ($M)',  data:[6,10,14,18,20,21,22,24],          borderColor:GRN_L, tension:0.35, pointRadius:3, borderDash:[4,3] }
+  ],
+  {
+    plugins:{ legend:{ display:true, labels:{ font:{size:10}, boxWidth:10, padding:8 } } },
+    scales:{
+      y:{ ticks:{ callback:v=>'$'+v+'M', font:{size:10} }, grid:{color:'rgba(0,0,0,0.04)'} },
+      x:{ grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+);
+
+// ── PAGE 4: BS DELTA ──────────────────────────────────────────────
+mk('d_bsDelta', 'bar',
+  ['IG Cash\n+410M','Repo book\n+280M','HQLA\n+180M','HY Cash\n+80M','CDS notl.\n−120M','Wholesale\n+320M'],
+  [{
+    data:[410,280,180,80,-120,320],
+    backgroundColor: ctx => ctx.raw>=0 ? (ctx.dataIndex>=4 ? STEEL : NAVY) : RED_L,
+    borderRadius: 3
+  }],
+  { scales:{
+    y:{ ticks:{ callback:v=>'$'+v+'M', font:{size:10} }, grid:{color:'rgba(0,0,0,0.04)'} },
+    x:{ grid:{display:false}, ticks:{font:{size:9}} }
+  }}
+);
+</script>
+</body>
+</html>
