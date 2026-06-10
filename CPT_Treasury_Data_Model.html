@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CPT Treasury Dashboard — Data Model</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #002855; --navy-dk: #001e42; --navy-md: #1a5276;
+    --gold: #D4A843; --gold-lt: #f5e6b8;
+    --green: #2e7d32; --green-bg: #e8f5e9;
+    --amber: #bf360c; --amber-bg: #fff3e0;
+    --red: #b71c1c;
+    --bg: #f0f2f5; --card: #fff; --border: #dde3ec; --border-lt: #eef1f5;
+    --txt: #1a1a2e; --txt-s: #4a5568; --txt-m: #8896a8;
+    font-family: 'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  }
+  body { background: var(--bg); color: var(--txt); font-size: 13px; line-height: 1.6; }
+  .topbar {
+    background: var(--navy); color: #fff; padding: 0 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px; position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-title { font-size: 15px; font-weight: 500; }
+  .topbar-sub   { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; }
+  .topbar-right { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .wrap { max-width: 1420px; margin: 0 auto; padding: 20px 24px 48px; }
+  h2 { font-size: 16px; font-weight: 600; color: var(--navy); margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--navy); }
+  h3 { font-size: 13px; font-weight: 600; color: #1a5276; margin: 18px 0 8px; }
+  p  { margin-bottom: 10px; color: var(--txt-s); font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin-bottom: 16px; }
+  .card-title { font-size: 10px; font-weight: 600; color: var(--navy); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-lt); }
+  .callout { border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; border-left: 3px solid; line-height: 1.6; }
+  .callout-key  { background: var(--gold-lt);  border-color: var(--gold);  color: #7a5c00; }
+  .callout-info { background: #dbeafe;          border-color: #1e3a5f;     color: #1e3a5f; }
+  pre {
+    background: #1a1a2e; color: #c8d8f8; border-radius: 5px;
+    padding: 14px 16px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; line-height: 1.65; overflow-x: auto;
+    margin-bottom: 12px; border: 1px solid #2a3555;
+  }
+  .kw { color: #7dd3fc; } .tp { color: #86efac; } .cm { color: #64748b; font-style: italic; }
+  .st { color: #fde68a; } .cn { color: #fcd34d; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+  th { font-size: 10px; font-weight: 600; color: var(--navy); text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--navy); background: #f4f6f9; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border-lt); }
+  td.c { text-align: center; font-size: 14px; }
+  .check { color: #2e7d32; font-weight: 700; }
+  .dash  { color: #c8d8ec; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+  /* Legend chips */
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .lchip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--txt-s); }
+  .lswatch { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+
+  .schema-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: #f7f9fc; padding: 8px; margin-bottom: 20px; }
+
+  .footer { background: var(--navy-dk); color: rgba(255,255,255,0.35); font-size: 10px; padding: 10px 28px; text-align: center; margin-top: 20px; }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+  .dim-type-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .dt-conf { background: #dbeafe; color: #1e3a5f; }
+  .dt-proc { background: #fff3e0; color: #7a3000; }
+  .dt-ref  { background: #dcfce7; color: #14532d; }
+  .dt-supp { background: #f3e8ff; color: #5b21b6; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">CPT Treasury Dashboard — Data Model · Dimension Tables</div>
+    <div class="topbar-sub">16 Dimensions · 7 Fact Tables · 2 Snowflake Ext · SQL Server DW (TreasuryDW)</div>
+  </div>
+  <div class="topbar-right">v1.0 · June 2026 · INTERNAL</div>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════════════════════════════════════════
+     GALAXY STAR SCHEMA — SVG
+     ══════════════════════════════════════════════════ -->
+<h2>Grain &amp; Hierarchy Assessment</h2>
+
+<div class="callout callout-key">
+  <strong>Decision: Position grain, not Trade grain.</strong> Individual trades belong in the source TMS/OMS (Bloomberg AIM, Murex, Aladdin). This DW receives <em>aggregated positions</em> from batch jobs — one row per Book × Instrument × Snapshot. Replicating trade-level data here would add millions of rows per day with no incremental analytical value for a management dashboard; trade-level queries should hit the front-office system directly.
+</div>
+
+<table style="margin-bottom:18px">
+  <thead>
+    <tr>
+      <th>Level</th><th>Object</th><th>Where it lives</th><th>Examples</th><th>Grain note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td><strong>Bank Group</strong></td><td>Not modelled (single-entity DW)</td><td>Demo Bank Group</td><td>Implicit — every row is in-group</td></tr>
+    <tr><td>2</td><td><strong>Legal Entity</strong></td><td><strong>DIM.LegalEntity</strong></td><td>Demo Bank N.A., Demo Bank Ltd</td><td>Regulatory / booking boundary</td></tr>
+    <tr><td>3</td><td><strong>Region / Country</strong></td><td><strong>DIM.Region · DIM.Country</strong></td><td>AMER/EMEA/APAC · US/GB/SG</td><td>Geographic slice; also on Issuer/Instrument</td></tr>
+    <tr><td>4</td><td><strong>Business Line</strong></td><td>Attribute of <strong>DIM.Desk</strong> (denormalised)</td><td>CIB, Treasury / ALM</td><td>Kimball: flatten short hierarchies into dim</td></tr>
+    <tr><td>5</td><td><strong>Division</strong></td><td>Attribute of <strong>DIM.Desk</strong> (denormalised)</td><td>Credit Portfolio Trading, Treasury Ops</td><td>Maps to the "hat": CPT vs TSY</td></tr>
+    <tr><td>6</td><td><strong>Desk</strong></td><td><strong>DIM.Desk</strong></td><td>IG Cash, HY Cash, CDX Index</td><td>Primary P&amp;L and limit reporting unit</td></tr>
+    <tr><td>7</td><td><strong>Portfolio / Book</strong></td><td><strong>DIM.Portfolio</strong> ← snowflake from Desk</td><td>IG Cash Book A, CDX Macro Hedge</td><td>Trade booking unit in TMS; FTP charged here</td></tr>
+    <tr><td>8</td><td><strong>Position</strong></td><td><strong>FCT.PositionSnapshot</strong> ← DW grain</td><td>Book A long $10m IBM 5Y bond</td><td>Net of all trades in Book × Instrument × Snapshot</td></tr>
+    <tr style="color:var(--txt-m)"><td>9</td><td><em>Trade</em></td><td><em>TMS/OMS source only — not in DW</em></td><td>TradeID 98765 buy $5m IBM 5Y</td><td>Individual transaction; sent to TMS at execution</td></tr>
+  </tbody>
+</table>
+
+<p>DIM.Desk denormalises BusinessLine and Division rather than creating separate snowflake tables. With only 2–3 business lines in scope (CPT / Treasury / ALM), a separate DIM.BusinessLine table adds join cost without enabling new analyses not already available via desk-level grouping. This aligns with the Kimball Bus Architecture recommendation for short, stable hierarchies.</p>
+
+<h2>Data Model — All Facts &amp; Dimensions</h2>
+
+<div class="legend">
+  <strong style="font-size:11px;color:var(--txt-s)">Dimension type:</strong>
+  <span class="lchip"><span class="lswatch" style="background:#1a5276"></span>Conformed (DateKey, TimeKey, ScenarioKey in every fact)</span>
+  <span class="lchip"><span class="lswatch" style="background:#7c3d12"></span>Process (desk/FTP/LCR workflow)</span>
+  <span class="lchip"><span class="lswatch" style="background:#14532d"></span>Reference (instruments, issuers, entities)</span>
+  <span class="lchip"><span class="lswatch" style="background:#581c87"></span>Supporting (funding, actions)</span>
+  <span class="lchip"><span class="lswatch" style="background:#002855"></span>Fact table</span>
+  <span style="font-size:11px;color:var(--txt-s);margin-left:6px">· · ·</span>
+  <span class="lchip"><span style="display:inline-block;width:22px;height:2px;background:#94a3b8;border-top:2px dashed #94a3b8;vertical-align:middle"></span>&nbsp;Snowflake: N Portfolios → 1 Desk</span>
+</div>
+
+<div class="schema-wrap">
+<svg viewBox="0 0 1380 1050" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:900px;display:block">
+  <defs>
+    <!-- Arrowhead markers -->
+    <marker id="arr-conf" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <polygon points="0 0, 7 3.5, 0 7" fill="#5b7fa6" opacity="0.7"/>
+    </marker>
+    <marker id="arr-proc" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <polygon points="0 0, 7 3.5, 0 7" fill="#c2772e" opacity="0.8"/>
+    </marker>
+    <marker id="arr-ref" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <polygon points="0 0, 7 3.5, 0 7" fill="#2d7d4f" opacity="0.8"/>
+    </marker>
+    <marker id="arr-supp" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <polygon points="0 0, 7 3.5, 0 7" fill="#7c3aed" opacity="0.7"/>
+    </marker>
+  </defs>
+
+  <!-- ── BACKGROUND ── -->
+  <rect width="1380" height="1050" fill="#f0f2f5" rx="6"/>
+
+  <!-- ── ZONE LABELS ── -->
+  <!-- Conformed dims zone -->
+  <rect x="205" y="32" width="770" height="72" rx="5" fill="none" stroke="#1a5276" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.5"/>
+  <text x="218" y="28" font-family="IBM Plex Sans,sans-serif" font-size="10" fill="#1a5276" font-weight="600" letter-spacing="0.08em" text-transform="uppercase">CONFORMED DIMENSIONS — DateKey · TimeKey · ScenarioKey present in all 7 fact tables</text>
+
+  <!-- Facts zone label -->
+  <text x="395" y="175" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#8896a8" font-weight="600" letter-spacing="0.1em">FACT TABLES</text>
+
+  <!-- ── CONNECTION LINES (drawn before boxes so boxes sit on top) ── -->
+
+  <!-- CONFORMED DIM CONNECTIONS (steel blue, dashed) -->
+  <!-- Bus rail at y=120 -->
+  <!-- DIM.Date bottom (300,104) → bus → FCT.PositionSnapshot top (502,188) -->
+  <path d="M300,104 V120 H502 V188" stroke="#5b7fa6" stroke-width="1.5" fill="none" stroke-dasharray="5,3" opacity="0.6" marker-end="url(#arr-conf)"/>
+  <!-- DIM.Time bottom (560,104) → bus → FCT.PositionSnapshot top -->
+  <path d="M560,104 V120 H502 V188" stroke="#5b7fa6" stroke-width="1.5" fill="none" stroke-dasharray="5,3" opacity="0.6" marker-end="url(#arr-conf)"/>
+  <!-- DIM.Scenario bottom (820,104) → FCT.RiskSensitivities top (782,188) -->
+  <path d="M820,104 V120 H782 V188" stroke="#5b7fa6" stroke-width="1.5" fill="none" stroke-dasharray="5,3" opacity="0.6" marker-end="url(#arr-conf)"/>
+  <!-- Bus rail line -->
+  <line x1="220" y1="120" x2="960" y2="120" stroke="#5b7fa6" stroke-width="1" opacity="0.25" stroke-dasharray="4,3"/>
+  <!-- Tick marks down to all facts -->
+  <line x1="502" y1="120" x2="502" y2="328" stroke="#5b7fa6" stroke-width="1" opacity="0.18" stroke-dasharray="3,4"/>
+  <line x1="782" y1="120" x2="782" y2="328" stroke="#5b7fa6" stroke-width="1" opacity="0.18" stroke-dasharray="3,4"/>
+  <line x1="502" y1="120" x2="502" y2="468" stroke="#5b7fa6" stroke-width="1" opacity="0.12" stroke-dasharray="3,4"/>
+  <line x1="782" y1="120" x2="782" y2="468" stroke="#5b7fa6" stroke-width="1" opacity="0.12" stroke-dasharray="3,4"/>
+  <!-- Annotation -->
+  <text x="968" y="124" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#5b7fa6" font-style="italic">↑ all facts</text>
+
+  <!-- PROCESS DIM CONNECTIONS (amber/orange) -->
+  <!-- DIM.Desk → FCT.PositionSnapshot -->
+  <path d="M195,238 H345 V225 H400" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.75" marker-end="url(#arr-proc)"/>
+  <!-- DIM.Desk → FCT.RiskSensitivities (route above row 1) -->
+  <path d="M195,238 H345 V165 H735 V225 H680" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.55" stroke-dasharray="6,2" marker-end="url(#arr-proc)"/>
+  <!-- DIM.Desk → FCT.FTPAttribution -->
+  <path d="M195,238 H345 V505 H400" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.55" stroke-dasharray="6,2" marker-end="url(#arr-proc)"/>
+  <!-- DIM.Strategy → FCT.PositionSnapshot -->
+  <path d="M195,340 H345 V225 H400" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.65" marker-end="url(#arr-proc)"/>
+  <!-- DIM.FTPComponent → FCT.FTPAttribution -->
+  <path d="M195,442 H345 V505 H400" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.75" marker-end="url(#arr-proc)"/>
+  <!-- DIM.LCRDriver → FCT.LCRAttribution (route below, right) -->
+  <path d="M195,542 H345 V558 H715 V505 H680" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.75" marker-end="url(#arr-proc)"/>
+
+  <!-- REFERENCE DIM CONNECTIONS (green) -->
+  <!-- DIM.Instrument → FCT.PositionSnapshot -->
+  <path d="M985,222 H940 V225 H605" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.75" marker-end="url(#arr-ref)"/>
+  <!-- DIM.Instrument → FCT.RiskSensitivities -->
+  <path d="M985,222 H885" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.75" marker-end="url(#arr-ref)"/>
+  <!-- DIM.Issuer → FCT.RiskSensitivities -->
+  <path d="M985,322 H940 V255 H885" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.65" marker-end="url(#arr-ref)"/>
+  <!-- DIM.LegalEntity → FCT.EntityCash -->
+  <path d="M985,422 H940 V365 H605" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.75" marker-end="url(#arr-ref)"/>
+  <!-- DIM.LegalEntity → FCT.PositionSnapshot (route up) -->
+  <path d="M985,422 H940 V225 H605" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.4" stroke-dasharray="5,2" marker-end="url(#arr-ref)"/>
+  <!-- DIM.Currency → FCT.EntityCash -->
+  <path d="M985,522 H940 V365 H605" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.55" stroke-dasharray="5,2" marker-end="url(#arr-ref)"/>
+  <!-- DIM.Currency → FCT.MarketData -->
+  <path d="M985,522 H940 V365 H885" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.65" marker-end="url(#arr-ref)"/>
+  <!-- DIM.RiskFactor → FCT.MarketData -->
+  <path d="M985,622 H940 V365 H885" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.75" marker-end="url(#arr-ref)"/>
+
+  <!-- SUPPORTING DIM CONNECTIONS (purple) -->
+  <!-- DIM.FundingSource → FCT.EntityCash -->
+  <path d="M457,755 V670 H502 V403" stroke="#7c3aed" stroke-width="1.8" fill="none" opacity="0.7" marker-end="url(#arr-supp)"/>
+  <!-- DIM.ActionType → FCT.ActionItem -->
+  <path d="M692,755 V685" stroke="#7c3aed" stroke-width="1.8" fill="none" opacity="0.7" marker-end="url(#arr-supp)"/>
+
+  <!-- ═══════════════════════════════════════
+       CONFORMED DIMENSION BOXES (top)
+       ═══════════════════════════════════════ -->
+
+  <!-- DIM.Date -->
+  <rect x="220" y="42" width="160" height="62" rx="5" fill="#1a5276" stroke="#5b7fa6" stroke-width="1.5"/>
+  <text x="300" y="62" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Date</text>
+  <text x="228" y="77" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">DateKey INT PK</text>
+  <text x="228" y="89" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">BusinessDate DATE</text>
+  <text x="228" y="101" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">IsBusinessDay · MonthEnd</text>
+
+  <!-- DIM.Time -->
+  <rect x="480" y="42" width="160" height="62" rx="5" fill="#1a5276" stroke="#5b7fa6" stroke-width="1.5"/>
+  <text x="560" y="62" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Time</text>
+  <text x="488" y="77" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">TimeKey INT PK</text>
+  <text x="488" y="89" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">TimeET TIME(0)</text>
+  <text x="488" y="101" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">TradingSlot · SessionLabel</text>
+
+  <!-- DIM.Scenario -->
+  <rect x="740" y="42" width="160" height="62" rx="5" fill="#1a5276" stroke="#5b7fa6" stroke-width="1.5"/>
+  <text x="820" y="62" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Scenario</text>
+  <text x="748" y="77" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ScenarioKey INT PK</text>
+  <text x="748" y="89" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ScenarioCode VARCHAR(10)</text>
+  <text x="748" y="101" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ShockCS01 · ShockDV01</text>
+
+  <!-- ═══════════════════════════════════════
+       LEFT DIMENSION BOXES (process)
+       ═══════════════════════════════════════ -->
+
+  <!-- DIM.Desk -->
+  <rect x="25" y="210" width="170" height="65" rx="5" fill="#7c3d12" stroke="#c2772e" stroke-width="1.5"/>
+  <text x="110" y="230" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Desk</text>
+  <text x="33" y="244" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">DeskKey INT PK</text>
+  <text x="33" y="256" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">DeskCode · DeskName</text>
+  <text x="33" y="268" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">Hat: CPT|TSY|BOTH</text>
+
+  <!-- DIM.Strategy -->
+  <rect x="25" y="310" width="170" height="65" rx="5" fill="#7c3d12" stroke="#c2772e" stroke-width="1.5"/>
+  <text x="110" y="330" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Strategy</text>
+  <text x="33" y="344" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">StrategyKey INT PK</text>
+  <text x="33" y="356" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">StrategyCode · Label</text>
+  <text x="33" y="368" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">RatingFocus · Instrument</text>
+
+  <!-- DIM.FTPComponent -->
+  <rect x="25" y="410" width="170" height="65" rx="5" fill="#7c3d12" stroke="#c2772e" stroke-width="1.5"/>
+  <text x="110" y="430" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.FTPComponent</text>
+  <text x="33" y="444" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ComponentKey INT PK</text>
+  <text x="33" y="456" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">MarginalFunding · LiqPrem</text>
+  <text x="33" y="468" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">BSCharge · CapCharge</text>
+
+  <!-- DIM.LCRDriver -->
+  <rect x="25" y="510" width="170" height="65" rx="5" fill="#7c3d12" stroke="#c2772e" stroke-width="1.5"/>
+  <text x="110" y="530" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.LCRDriver</text>
+  <text x="33" y="544" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">DriverKey INT PK</text>
+  <text x="33" y="556" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">DriverCode · DriverLabel</text>
+  <text x="33" y="568" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">HQLAImpact · OutflowDriven</text>
+
+  <!-- DIM.Portfolio (snowflake off DIM.Desk) -->
+  <rect x="25" y="592" width="170" height="90" rx="5" fill="#7c3d12" stroke="#c2772e" stroke-width="1.5"/>
+  <!-- Gold accent strip to signal snowflake dim -->
+  <rect x="25" y="592" width="170" height="4" rx="5" fill="#D4A843" opacity="0.7"/>
+  <text x="110" y="614" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Portfolio</text>
+  <text x="33" y="628" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">PortfolioKey INT PK</text>
+  <text x="33" y="640" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">PortfolioCode · DeskKey FK</text>
+  <text x="33" y="652" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">PortfolioType · BaseCCY</text>
+  <text x="33" y="664" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">BSLimitUSD · IsHedgeBook</text>
+  <text x="33" y="676" font-family="IBM Plex Mono,monospace" font-size="9" fill="#D4A843">↑ snowflake: N:1 to DIM.Desk</text>
+
+  <!-- Snowflake line: DIM.Desk → DIM.Portfolio (routing at x=6, outside box column) -->
+  <path d="M110,275 H6 V637 H25" stroke="#94a3b8" stroke-width="1.4" fill="none" stroke-dasharray="5,3" opacity="0.7"/>
+  <text x="8" y="460" font-family="IBM Plex Sans,sans-serif" font-size="8" fill="#94a3b8" opacity="0.8" transform="rotate(-90 8 460)">1 Desk : N Portfolios</text>
+
+  <!-- DIM.Portfolio → facts (process-colour lines, slightly thinner) -->
+  <!-- DIM.Portfolio → FCT.PositionSnapshot -->
+  <path d="M195,625 H345 V225 H400" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.65" marker-end="url(#arr-proc)"/>
+  <!-- DIM.Portfolio → FCT.RiskSensitivities -->
+  <path d="M195,625 H345 V160 H735 V225 H680" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.45" stroke-dasharray="6,2" marker-end="url(#arr-proc)"/>
+  <!-- DIM.Portfolio → FCT.FTPAttribution -->
+  <path d="M195,645 H345 V505 H400" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.65" marker-end="url(#arr-proc)"/>
+  <!-- DIM.Portfolio → FCT.ActionItem -->
+  <path d="M195,660 H345 V660 H537" stroke="#c2772e" stroke-width="1.8" fill="none" opacity="0.55" stroke-dasharray="5,2" marker-end="url(#arr-proc)"/>
+
+  <!-- Cardinality label for Portfolio -->
+  <text x="265" y="590" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#c2772e" font-weight="600">1:M</text>
+
+  <!-- ═══════════════════════════════════════
+       FACT TABLE BOXES (center)
+       ═══════════════════════════════════════ -->
+
+  <!-- Row 1 -->
+  <!-- FCT.PositionSnapshot (largest - most connections) -->
+  <rect x="400" y="188" width="205" height="100" rx="5" fill="#002855" stroke="#5b7fa6" stroke-width="2"/>
+  <rect x="400" y="188" width="205" height="18" rx="5" fill="#1a5276"/>
+  <rect x="400" y="200" width="205" height="6" fill="#1a5276"/>
+  <text x="502" y="201" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">FCT.PositionSnapshot</text>
+  <text x="408" y="221" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DateKey · TimeKey · DeskKey</text>
+  <text x="408" y="233" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">PortfolioKey · InstrumentKey</text>
+  <text x="408" y="245" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">EntityKey · ScenarioKey · StratKey</text>
+  <text x="408" y="257" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">Notional · MV · BSAlloc</text>
+  <text x="408" y="269" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">GrossPL · FTPCharge · EconPL</text>
+  <text x="408" y="281" font-family="IBM Plex Mono,monospace" font-size="9" fill="#D4A843">★ Central fact — 8 FKs</text>
+
+  <!-- FCT.RiskSensitivities -->
+  <rect x="680" y="188" width="205" height="100" rx="5" fill="#002855" stroke="#5b7fa6" stroke-width="2"/>
+  <rect x="680" y="188" width="205" height="18" rx="5" fill="#1a5276"/>
+  <rect x="680" y="200" width="205" height="6" fill="#1a5276"/>
+  <text x="782" y="201" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">FCT.RiskSensitivities</text>
+  <text x="688" y="221" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DateKey · TimeKey · DeskKey</text>
+  <text x="688" y="233" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">PortfolioKey · InstrumentKey</text>
+  <text x="688" y="245" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">IssuerKey · CountryKey</text>
+  <text x="688" y="257" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">ScenarioKey</text>
+  <text x="688" y="269" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">CS01 · DV01 · JtD</text>
+  <text x="688" y="281" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.45)">8 FKs</text>
+
+  <!-- Row 2 -->
+  <!-- FCT.EntityCash -->
+  <rect x="400" y="328" width="205" height="100" rx="5" fill="#002855" stroke="#5b7fa6" stroke-width="2"/>
+  <rect x="400" y="328" width="205" height="18" rx="5" fill="#1a5276"/>
+  <rect x="400" y="340" width="205" height="6" fill="#1a5276"/>
+  <text x="502" y="341" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">FCT.EntityCash</text>
+  <text x="408" y="361" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DateKey · TimeKey · EntityKey</text>
+  <text x="408" y="373" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">CurrencyKey · FundingSourceKey</text>
+  <text x="408" y="385" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">RegionKey · CountryKey</text>
+  <text x="408" y="397" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">CashPosition_CCY · _USD</text>
+  <text x="408" y="409" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">FXRate · AlertStatus</text>
+  <text x="408" y="421" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.45)">7 FKs</text>
+
+  <!-- FCT.MarketData -->
+  <rect x="680" y="328" width="205" height="100" rx="5" fill="#002855" stroke="#5b7fa6" stroke-width="2"/>
+  <rect x="680" y="328" width="205" height="18" rx="5" fill="#1a5276"/>
+  <rect x="680" y="340" width="205" height="6" fill="#1a5276"/>
+  <text x="782" y="341" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">FCT.MarketData</text>
+  <text x="688" y="361" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DateKey · TimeKey</text>
+  <text x="688" y="373" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">RiskFactorKey · CurrencyKey</text>
+  <text x="688" y="385" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">Value · Unit · OvernightChg</text>
+  <text x="688" y="397" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">PriorCloseValue</text>
+  <text x="688" y="409" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">SourceSystem</text>
+  <text x="688" y="421" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.45)">4 FKs</text>
+
+  <!-- Row 3 -->
+  <!-- FCT.FTPAttribution -->
+  <rect x="400" y="468" width="205" height="100" rx="5" fill="#002855" stroke="#5b7fa6" stroke-width="2"/>
+  <rect x="400" y="468" width="205" height="18" rx="5" fill="#1a5276"/>
+  <rect x="400" y="480" width="205" height="6" fill="#1a5276"/>
+  <text x="502" y="481" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">FCT.FTPAttribution</text>
+  <text x="408" y="501" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DateKey · DeskKey</text>
+  <text x="408" y="513" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">PortfolioKey · ComponentKey</text>
+  <text x="408" y="525" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">VolumeEffect · RateEffect</text>
+  <text x="408" y="537" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">CurveEffect · MixEffect</text>
+  <text x="408" y="549" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">TotalDelta · ReconBreak</text>
+  <text x="408" y="561" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.45)">4 FKs · EOD grain</text>
+
+  <!-- FCT.LCRAttribution -->
+  <rect x="680" y="468" width="205" height="100" rx="5" fill="#002855" stroke="#5b7fa6" stroke-width="2"/>
+  <rect x="680" y="468" width="205" height="18" rx="5" fill="#1a5276"/>
+  <rect x="680" y="480" width="205" height="6" fill="#1a5276"/>
+  <text x="782" y="481" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">FCT.LCRAttribution</text>
+  <text x="688" y="501" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DateKey · DriverKey</text>
+  <text x="688" y="513" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DeskKey · EntityKey</text>
+  <text x="688" y="525" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">LCR_Impact_PP</text>
+  <text x="688" y="537" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">HQLA_Delta · Outflow_Delta</text>
+  <text x="688" y="549" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">DriverLabel</text>
+  <text x="688" y="561" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.45)">4 FKs · EOD grain</text>
+
+  <!-- Row 4 (centered) -->
+  <!-- FCT.ActionItem -->
+  <rect x="537" y="618" width="210" height="100" rx="5" fill="#002855" stroke="#5b7fa6" stroke-width="2"/>
+  <rect x="537" y="618" width="210" height="18" rx="5" fill="#1a5276"/>
+  <rect x="537" y="630" width="210" height="6" fill="#1a5276"/>
+  <text x="642" y="631" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">FCT.ActionItem</text>
+  <text x="545" y="651" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">DateKey · TimeKey · DeskKey</text>
+  <text x="545" y="663" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">PortfolioKey · EntityKey</text>
+  <text x="545" y="675" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.75)">ActionTypeKey · Hat</text>
+  <text x="545" y="687" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">SeverityCode · MonitorText</text>
+  <text x="545" y="699" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.6)">DiagnoseText · ActionText</text>
+  <text x="545" y="711" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.45)">6 FKs · M→D→A engine</text>
+
+  <!-- ═══════════════════════════════════════
+       RIGHT DIMENSION BOXES (reference)
+       ═══════════════════════════════════════ -->
+
+  <!-- DIM.Instrument -->
+  <rect x="985" y="197" width="175" height="65" rx="5" fill="#14532d" stroke="#2d7d4f" stroke-width="1.5"/>
+  <text x="1072" y="217" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Instrument</text>
+  <text x="993" y="231" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">InstrumentKey INT PK</text>
+  <text x="993" y="243" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ISIN · Type · RatingBucket</text>
+  <text x="993" y="255" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">IsHQLA · HQLALevel</text>
+
+  <!-- DIM.Issuer -->
+  <rect x="985" y="297" width="175" height="65" rx="5" fill="#14532d" stroke="#2d7d4f" stroke-width="1.5"/>
+  <text x="1072" y="317" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Issuer</text>
+  <text x="993" y="331" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">IssuerKey INT PK</text>
+  <text x="993" y="343" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">IssuerCode · Sector · Country</text>
+  <text x="993" y="355" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">Rating · IsIndex · IsSovereign</text>
+
+  <!-- DIM.LegalEntity -->
+  <rect x="985" y="397" width="175" height="65" rx="5" fill="#14532d" stroke="#2d7d4f" stroke-width="1.5"/>
+  <text x="1072" y="417" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.LegalEntity</text>
+  <text x="993" y="431" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">EntityKey INT PK</text>
+  <text x="993" y="443" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">EntityCode · City · Region</text>
+  <text x="993" y="455" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">PrimaryCCY · TimeZone</text>
+
+  <!-- DIM.Currency -->
+  <rect x="985" y="497" width="175" height="65" rx="5" fill="#14532d" stroke="#2d7d4f" stroke-width="1.5"/>
+  <text x="1072" y="517" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Currency</text>
+  <text x="993" y="531" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">CurrencyKey INT PK</text>
+  <text x="993" y="543" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">CurrencyCode CHAR(3)</text>
+  <text x="993" y="555" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">Region · IsHardCurrency</text>
+
+  <!-- DIM.RiskFactor -->
+  <rect x="985" y="597" width="175" height="65" rx="5" fill="#14532d" stroke="#2d7d4f" stroke-width="1.5"/>
+  <text x="1072" y="617" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.RiskFactor</text>
+  <text x="993" y="631" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">FactorKey INT PK</text>
+  <text x="993" y="643" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">FactorCode · AssetClass</text>
+  <text x="993" y="655" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">Tenor · Unit · SourcePriority</text>
+
+  <!-- DIM.Country (new reference dim) -->
+  <rect x="985" y="700" width="175" height="68" rx="5" fill="#14532d" stroke="#2d7d4f" stroke-width="1.5"/>
+  <text x="1072" y="720" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Country</text>
+  <text x="993" y="734" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">CountryKey INT PK</text>
+  <text x="993" y="746" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ISO2 · CountryName</text>
+  <text x="993" y="758" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">RegionKey FK · IsG10 · IsEM</text>
+
+  <!-- DIM.Region (new small lookup) -->
+  <rect x="985" y="788" width="175" height="55" rx="5" fill="#14532d" stroke="#2d7d4f" stroke-width="1.5"/>
+  <text x="1072" y="808" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.Region</text>
+  <text x="993" y="822" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">RegionKey INT PK</text>
+  <text x="993" y="834" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">RegionCode · RegionLabel</text>
+
+  <!-- DIM.Region → DIM.Country snowflake (Country has a RegionKey FK) -->
+  <path d="M1072,788 V843 H985" stroke="#94a3b8" stroke-width="1" fill="none" stroke-dasharray="4,3" opacity="0.6"/>
+  <text x="1026" y="849" font-family="IBM Plex Sans,sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle" opacity="0.8">1 Region : N Countries</text>
+
+  <!-- Country connection lines (use right-side routing at x=920) -->
+  <!-- DIM.Country → FCT.RiskSensitivities -->
+  <path d="M985,722 H920 V262 H885" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.65" marker-end="url(#arr-ref)"/>
+  <!-- DIM.Country → FCT.EntityCash -->
+  <path d="M985,734 H920 V385 H605" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.55" stroke-dasharray="5,2" marker-end="url(#arr-ref)"/>
+  <!-- DIM.Region → FCT.EntityCash -->
+  <path d="M985,815 H920 V400 H605" stroke="#2d7d4f" stroke-width="1.8" fill="none" opacity="0.65" marker-end="url(#arr-ref)"/>
+
+  <!-- Cardinality labels -->
+  <text x="955" y="718" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#2d7d4f" font-weight="600">1:M</text>
+  <text x="955" y="813" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#2d7d4f" font-weight="600">1:M</text>
+
+  <!-- ═══════════════════════════════════════
+       BOTTOM DIMENSION BOXES (supporting)
+       ═══════════════════════════════════════ -->
+
+  <!-- DIM.FundingSource -->
+  <rect x="365" y="760" width="175" height="65" rx="5" fill="#581c87" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="452" y="780" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.FundingSource</text>
+  <text x="373" y="794" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">FundingSourceKey INT PK</text>
+  <text x="373" y="806" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">SourceType · IsRetail</text>
+  <text x="373" y="818" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">Tenor · ConcentrationTier</text>
+
+  <!-- DIM.ActionType -->
+  <rect x="610" y="760" width="175" height="65" rx="5" fill="#581c87" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="697" y="780" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="11" font-weight="600" fill="#fff">DIM.ActionType</text>
+  <text x="618" y="794" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ActionTypeKey INT PK</text>
+  <text x="618" y="806" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ActionCode · CategoryCode</text>
+  <text x="618" y="818" font-family="IBM Plex Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">Hat · SeverityDefault</text>
+
+  <!-- ── CARDINALITY LABELS on key connections ── -->
+  <text x="265" y="207" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#c2772e" font-weight="600">1:M</text>
+  <text x="265" y="307" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#c2772e" font-weight="600">1:M</text>
+  <text x="265" y="407" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#c2772e" font-weight="600">1:M</text>
+  <text x="265" y="507" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#c2772e" font-weight="600">1:M</text>
+  <text x="955" y="218" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#2d7d4f" font-weight="600">1:M</text>
+  <text x="955" y="318" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#2d7d4f" font-weight="600">1:M</text>
+  <text x="955" y="418" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#2d7d4f" font-weight="600">1:M</text>
+  <text x="955" y="518" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#2d7d4f" font-weight="600">1:M</text>
+  <text x="955" y="618" font-family="IBM Plex Sans,sans-serif" font-size="9" fill="#2d7d4f" font-weight="600">1:M</text>
+
+  <!-- ── SCHEMA TYPE LABEL ── -->
+  <text x="1190" y="1010" font-family="IBM Plex Sans,sans-serif" font-size="10" fill="#8896a8" text-anchor="end">Galaxy (Constellation) Schema + 2 Snowflake Ext · TreasuryDW · SQL Server 2022</text>
+
+</svg>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     FACT-DIMENSION CONNECTION MATRIX
+     ══════════════════════════════════════════════════ -->
+<h2>Fact × Dimension Connection Matrix</h2>
+<p>All facts carry <strong>DateKey</strong>, <strong>TimeKey</strong>, <strong>ScenarioKey</strong> (conformed). Specific FKs shown below.</p>
+
+<div style="overflow-x:auto">
+<table>
+  <thead>
+    <tr>
+      <th style="min-width:150px">Dimension</th>
+      <th style="min-width:60px">Type</th>
+      <th style="min-width:130px">FCT.Position<br>Snapshot</th>
+      <th style="min-width:130px">FCT.Risk<br>Sensitivities</th>
+      <th style="min-width:120px">FCT.Entity<br>Cash</th>
+      <th style="min-width:120px">FCT.Market<br>Data</th>
+      <th style="min-width:120px">FCT.FTP<br>Attribution</th>
+      <th style="min-width:120px">FCT.LCR<br>Attribution</th>
+      <th style="min-width:120px">FCT.Action<br>Item</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="background:#eef3f9">
+      <td><strong>DIM.Date</strong></td><td><span class="dim-type-badge dt-conf">Conformed</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td>
+    </tr>
+    <tr style="background:#eef3f9">
+      <td><strong>DIM.Time</strong></td><td><span class="dim-type-badge dt-conf">Conformed</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td>
+    </tr>
+    <tr style="background:#eef3f9">
+      <td><strong>DIM.Scenario</strong></td><td><span class="dim-type-badge dt-conf">Conformed</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr>
+      <td><strong>DIM.Desk</strong></td><td><span class="dim-type-badge dt-proc">Process</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td>
+    </tr>
+    <tr>
+      <td><strong>DIM.Strategy</strong></td><td><span class="dim-type-badge dt-proc">Process</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr>
+      <td><strong>DIM.FTPComponent</strong></td><td><span class="dim-type-badge dt-proc">Process</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr>
+      <td><strong>DIM.LCRDriver</strong></td><td><span class="dim-type-badge dt-proc">Process</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="background:#fef9ec">
+      <td><strong>DIM.Portfolio</strong></td><td><span class="dim-type-badge dt-proc">Process</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td>
+    </tr>
+    <tr style="background:#f0faf3">
+      <td><strong>DIM.Instrument</strong></td><td><span class="dim-type-badge dt-ref">Reference</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="background:#f0faf3">
+      <td><strong>DIM.Issuer</strong></td><td><span class="dim-type-badge dt-ref">Reference</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="background:#f0faf3">
+      <td><strong>DIM.LegalEntity</strong></td><td><span class="dim-type-badge dt-ref">Reference</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td>
+    </tr>
+    <tr style="background:#f0faf3">
+      <td><strong>DIM.Currency</strong></td><td><span class="dim-type-badge dt-ref">Reference</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="background:#f0faf3">
+      <td><strong>DIM.RiskFactor</strong></td><td><span class="dim-type-badge dt-ref">Reference</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="background:#f5f0ff">
+      <td><strong>DIM.FundingSource</strong></td><td><span class="dim-type-badge dt-supp">Supporting</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="background:#f5f0ff">
+      <td><strong>DIM.ActionType</strong></td><td><span class="dim-type-badge dt-supp">Supporting</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td>
+    </tr>
+    <tr style="background:#f0faf3">
+      <td><strong>DIM.Country</strong></td><td><span class="dim-type-badge dt-ref">Reference</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td><td class="c"><span class="check">✓</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="background:#f0faf3">
+      <td><strong>DIM.Region</strong></td><td><span class="dim-type-badge dt-ref">Reference</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="check">✓</span></td>
+      <td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td><td class="c"><span class="dash">—</span></td>
+    </tr>
+    <tr style="font-weight:600;background:#f4f6f9">
+      <td>Total FK count</td><td></td>
+      <td class="c" style="color:#002855">8</td><td class="c" style="color:#002855">8</td><td class="c" style="color:#002855">7</td>
+      <td class="c" style="color:#002855">4</td><td class="c" style="color:#002855">4</td><td class="c" style="color:#002855">4</td><td class="c" style="color:#002855">6</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     DIMENSION TABLE DDL — ALL 13 DIMENSIONS
+     ══════════════════════════════════════════════════ -->
+<h2>Dimension Table DDL — Full Specification</h2>
+
+<div class="callout callout-info">
+  All dimension tables are in schema <span class="mono">DIM</span> of the <span class="mono">TreasuryDW</span> database. Integer surrogate keys (IDENTITY) are generated in the DW; business/natural keys are retained for drill-through. SCD Type 1 (overwrite) unless otherwise noted. <strong>DIM.Portfolio</strong> is a snowflake extension of DIM.Desk — it does not duplicate desk attributes; those are resolved by join at query time.
+</div>
+
+
+<h3>Conformed Dimensions</h3>
+<div class="g3">
+<div>
+<pre><span class="cm">-- DIM.Date
+-- Loaded once; extended annually
+-- Market calendar flags drive
+-- trading-day logic in SSAS</span>
+<span class="kw">CREATE TABLE</span> DIM.Date (
+  DateKey       <span class="tp">INT</span>         <span class="kw">PRIMARY KEY</span>,
+  <span class="cm">-- YYYYMMDD format, e.g. 20260609</span>
+  BusinessDate  <span class="tp">DATE</span>        <span class="kw">NOT NULL</span>,
+  DayOfWeek     <span class="tp">TINYINT</span>,    <span class="cm">-- 1=Mon...7=Sun</span>
+  DayName       <span class="tp">VARCHAR</span>(10),
+  WeekOfYear    <span class="tp">TINYINT</span>,
+  MonthNum      <span class="tp">TINYINT</span>,
+  MonthName     <span class="tp">VARCHAR</span>(10),
+  QuarterNum    <span class="tp">TINYINT</span>,
+  QuarterLabel  <span class="tp">CHAR</span>(6),    <span class="cm">-- 'Q1 FY26'</span>
+  CalYear       <span class="tp">SMALLINT</span>,
+  FiscalYear    <span class="tp">SMALLINT</span>,   <span class="cm">-- Jan-Dec</span>
+  FiscalQtr     <span class="tp">TINYINT</span>,
+  IsBusinessDay <span class="tp">BIT</span>,        <span class="cm">-- NYSE calendar</span>
+  IsMonthEnd    <span class="tp">BIT</span>,
+  IsQuarterEnd  <span class="tp">BIT</span>,
+  IsYearEnd     <span class="tp">BIT</span>,
+  IsFedHoliday  <span class="tp">BIT</span>,
+  IsLCRRefDate  <span class="tp">BIT</span>,
+  <span class="cm">-- 30-cal day horizon for LCR</span>
+  LCRHorizonEnd <span class="tp">DATE</span>,
+  PriorBusDate  <span class="tp">DATE</span>,
+  NextBusDate   <span class="tp">DATE</span>
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.Time
+-- 15-minute grain (96 rows/day)
+-- Matches intraday snapshot cadence</span>
+<span class="kw">CREATE TABLE</span> DIM.Time (
+  TimeKey      <span class="tp">INT</span>         <span class="kw">PRIMARY KEY</span>,
+  <span class="cm">-- HHMM integer, e.g. 930 = 09:30</span>
+  TimeET       <span class="tp">TIME</span>(0)     <span class="kw">NOT NULL</span>,
+  TimeUTC      <span class="tp">TIME</span>(0)     <span class="kw">NOT NULL</span>,
+  HourET       <span class="tp">TINYINT</span>,
+  MinuteBlock  <span class="tp">TINYINT</span>,   <span class="cm">-- 0,15,30,45</span>
+  TradingSlot  <span class="tp">VARCHAR</span>(15),
+  <span class="cm">-- 'Pre-market'|'Market'|'Post'|'EoD'</span>
+  SessionLabel <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'SoD'|'Intraday'|'EoD Snap'</span>
+  IsMarketHour <span class="tp">BIT</span>,
+  <span class="cm">-- 09:30 ET – 16:00 ET</span>
+  IsAsiaOverlap <span class="tp">BIT</span>,
+  <span class="cm">-- 08:00–09:30 ET (LN/TKY)</span>
+  SlotSeq      <span class="tp">TINYINT</span>
+  <span class="cm">-- sequence number within day</span>
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.Scenario
+-- Powers scenario toggle in SSAS
+-- Calculation Group &amp; dashboard UI</span>
+<span class="kw">CREATE TABLE</span> DIM.Scenario (
+  ScenarioKey   <span class="tp">INT</span>         <span class="kw">PRIMARY KEY</span>,
+  ScenarioCode  <span class="tp">VARCHAR</span>(10) <span class="kw">NOT NULL</span>,
+  <span class="cm">-- 'BASE'|'ADVERSE'|'SEVERE'</span>
+  ScenarioLabel <span class="tp">VARCHAR</span>(40),
+  ScenarioOrder <span class="tp">TINYINT</span>,
+  ShockCS01_Bps <span class="tp">INT</span>,
+  <span class="cm">-- credit spread shock (bps)</span>
+  ShockDV01_Bps <span class="tp">INT</span>,
+  <span class="cm">-- interest rate shock (bps)</span>
+  ShockFX_Pct   <span class="tp">DECIMAL</span>(5,2),
+  <span class="cm">-- FX depreciation % (USD up)</span>
+  ShockFunding_Bps <span class="tp">INT</span>,
+  <span class="cm">-- funding cost widening (bps)</span>
+  PLMultiplier  <span class="tp">DECIMAL</span>(5,3),
+  <span class="cm">-- applied in SSAS Calc Group</span>
+  Source        <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- 'EBA'|'Fed DFAST'|'Internal'</span>
+  IsActive      <span class="tp">BIT</span>
+);</pre>
+</div>
+</div>
+
+
+<h3>Process Dimensions</h3>
+<div class="g2">
+<div>
+<pre><span class="cm">-- DIM.Desk
+-- One row per trading desk / book group
+-- BSLimitUSD is Treasury-set; updated
+-- when limits change (SCD Type 2 option
+-- if audit trail of limit changes needed)</span>
+<span class="kw">CREATE TABLE</span> DIM.Desk (
+  DeskKey           <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  DeskCode          <span class="tp">VARCHAR</span>(20)  <span class="kw">NOT NULL UNIQUE</span>,
+  <span class="cm">-- 'IG_CASH'|'HY_CASH'|'CDX_IDX'
+  -- 'EM_BONDS'|'SN_CDS'|'STRUCT_CREDIT'</span>
+  DeskName          <span class="tp">VARCHAR</span>(60),
+  <span class="cm">-- ── Denormalised business hierarchy ──
+  -- Kimball: flatten short stable hierarchies.
+  -- 2-3 business lines in scope; separate
+  -- DIM.BusinessLine table adds join cost
+  -- without enabling new analyses.</span>
+  BusinessLineCode  <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'CIB' | 'MARKETS' | 'TREASURY_ALM'</span>
+  BusinessLineLabel <span class="tp">VARCHAR</span>(40),
+  <span class="cm">-- 'Corporate &amp; Institutional Banking'
+  -- 'Treasury &amp; ALM'</span>
+  DivisionCode      <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- 'CREDIT_PORTFOLIO' (CPT desks)
+  -- 'TREASURY_OPS'     (TSY desks)
+  -- 'REPO_FINANCING'   (repo/collateral)
+  -- 'STRUCTURED'       (CLO/ABS)</span>
+  DivisionLabel     <span class="tp">VARCHAR</span>(60),
+  Hat               <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'CPT' | 'TSY' | 'BOTH'
+  -- maps DivisionCode to dual-hat lens</span>
+  RatingFocus       <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'IG' | 'HY' | 'EM' | 'MIXED'</span>
+  InstrumentFocus   <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'CASH_BOND'|'CDS'|'CLO'|'INDEX'</span>
+  RegionFocus       <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'US' | 'EU' | 'EM' | 'GLOBAL'</span>
+  DeskHeadName      <span class="tp">VARCHAR</span>(60),
+  BSLimitUSD        <span class="tp">DECIMAL</span>(18,2),
+  LCRDragLimit_PP   <span class="tp">DECIMAL</span>(7,4),
+  <span class="cm">-- max pp contribution to LCR drag</span>
+  FTPGroupCode      <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- FTP pool membership</span>
+  IsActive          <span class="tp">BIT</span>           <span class="kw">DEFAULT</span> 1,
+  EffectiveFrom     <span class="tp">DATE</span>,
+  EffectiveTo       <span class="tp">DATE</span>          <span class="kw">NULL</span>
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.Strategy
+-- Sub-classification within a desk
+-- CPT may run multiple strategies
+-- on the same desk (e.g. IG Cash:
+-- long-only vs relative-value)</span>
+<span class="kw">CREATE TABLE</span> DIM.Strategy (
+  StrategyKey    <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  StrategyCode   <span class="tp">VARCHAR</span>(30)  <span class="kw">NOT NULL UNIQUE</span>,
+  StrategyLabel  <span class="tp">VARCHAR</span>(80),
+  DeskKey        <span class="tp">INT</span> <span class="kw">REFERENCES</span> DIM.Desk(DeskKey),
+  <span class="cm">-- strategy belongs to a desk</span>
+  RatingFocus    <span class="tp">CHAR</span>(5),
+  InstrumentType <span class="tp">VARCHAR</span>(30),
+  HoldingPeriod  <span class="tp">VARCHAR</span>(15),
+  <span class="cm">-- 'INTRADAY'|'SWING'|'CORE'</span>
+  IsHedgeStrategy <span class="tp">BIT</span>,
+  FTPPoolEligible <span class="tp">BIT</span>,
+  BSConsumption  <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'HIGH'|'MEDIUM'|'LOW'|'ZERO'
+  -- CDS = ZERO (unfunded)</span>
+  Description    <span class="tp">NVARCHAR</span>(200),
+  IsActive       <span class="tp">BIT</span>          <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+</div>
+
+<div class="callout callout-key">
+  <strong>DIM.Portfolio (Book)</strong> · "Portfolio" and "Book" are used interchangeably across TMS platforms (Bloomberg AIM: Book; Murex: Portfolio; Aladdin: Portfolio). Each trade in the TMS is tagged to a Book at execution. This DW does <em>not</em> store individual trades — it receives net positions (Book × Instrument aggregates) from batch jobs. DIM.Portfolio is therefore the bridge between the trade-level source world and the position-level DW grain. Facts retain <span class="mono">DeskKey</span> as a denormalised FK so desk-rollup queries avoid the Portfolio→Desk join.
+</div>
+
+<div class="g2">
+<div>
+<pre><span class="cm">-- DIM.Portfolio
+-- Snowflake extension of DIM.Desk.
+-- GRAIN: one row per named portfolio/book.
+-- Trades in FCT.PositionSnapshot are booked
+-- at portfolio level. DeskKey is retained in
+-- facts as a denormalized FK for performance
+-- (avoids Portfolio→Desk join in every query).
+-- SCD Type 2 on DeskKey if portfolios can
+-- be reassigned between desks over time.</span>
+<span class="kw">CREATE TABLE</span> DIM.Portfolio (
+  PortfolioKey     <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  PortfolioCode    <span class="tp">VARCHAR</span>(30)  <span class="kw">NOT NULL UNIQUE</span>,
+  <span class="cm">-- e.g. 'IG_CASH_A', 'HY_CASH_MAIN'
+  --      'CDX_MACRO_HEDGE', 'EM_LATAM'</span>
+  PortfolioName    <span class="tp">VARCHAR</span>(80),
+  DeskKey          <span class="tp">INT</span>  <span class="kw">NOT NULL</span>
+                   <span class="kw">REFERENCES</span> DIM.Desk(DeskKey),
+  <span class="cm">-- N portfolios : 1 desk (snowflake)</span>
+  PortfolioType    <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'TRADING'       : normal risk book
+  -- 'BANKING_BOOK'  : accrual / AFS
+  -- 'HEDGE'         : macro/micro hedge
+  -- 'REPO'          : financing book
+  -- 'INDEX'         : CDX/iTraxx tracking</span>
+  BaseCurrency     <span class="tp">CHAR</span>(3)     <span class="kw">DEFAULT</span> <span class="st">'USD'</span>,
+  BookingEntity    <span class="tp">VARCHAR</span>(20)  <span class="kw">NULL</span>,
+  <span class="cm">-- legal entity code for default booking</span>
+  IsHedgeBook      <span class="tp">BIT</span>         <span class="kw">DEFAULT</span> 0,
+  <span class="cm">-- flag for hedge accounting designation</span>
+  IsHedgeTarget    <span class="tp">BIT</span>         <span class="kw">DEFAULT</span> 0,
+  <span class="cm">-- the portfolio being hedged (not the hedge)</span>
+  HedgeTargetPortfolioCode <span class="tp">VARCHAR</span>(30) <span class="kw">NULL</span>,
+  <span class="cm">-- FK to self: which book does this hedge?</span>
+  BSLimitUSD       <span class="tp">DECIMAL</span>(18,2) <span class="kw">NULL</span>,
+  <span class="cm">-- portfolio-level BS limit (NULL = use desk)</span>
+  RiskLimitCS01    <span class="tp">DECIMAL</span>(18,2) <span class="kw">NULL</span>,
+  <span class="cm">-- max CS01 notional (USD/bp)</span>
+  RiskLimitDV01    <span class="tp">DECIMAL</span>(18,2) <span class="kw">NULL</span>,
+  <span class="cm">-- max DV01 notional (USD/bp)</span>
+  FTPGroupCode     <span class="tp">VARCHAR</span>(20)   <span class="kw">NULL</span>,
+  <span class="cm">-- FTP pool assignment (may differ from desk)</span>
+  ReportingGroup   <span class="tp">VARCHAR</span>(30)   <span class="kw">NULL</span>,
+  <span class="cm">-- roll-up label for P&amp;L reporting</span>
+  IsActive         <span class="tp">BIT</span>           <span class="kw">DEFAULT</span> 1,
+  EffectiveFrom    <span class="tp">DATE</span>          <span class="kw">NOT NULL</span>,
+  EffectiveTo      <span class="tp">DATE</span>          <span class="kw">NULL</span>
+  <span class="cm">-- NULL = currently active</span>
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- Impacted facts — PortfolioKey additions:
+--
+-- FCT.PositionSnapshot
+--   ADD PortfolioKey INT NOT NULL
+--   REFERENCES DIM.Portfolio(PortfolioKey);
+--   FK count: 7 → 8
+--   GRAIN: portfolio × instrument × date × time
+--
+-- FCT.RiskSensitivities
+--   ADD PortfolioKey INT NOT NULL
+--   REFERENCES DIM.Portfolio(PortfolioKey);
+--   FK count: 6 → 7
+--   GRAIN: portfolio × instrument × issuer × date
+--
+-- FCT.FTPAttribution
+--   ADD PortfolioKey INT NOT NULL
+--   REFERENCES DIM.Portfolio(PortfolioKey);
+--   FK count: 3 → 4
+--   GRAIN: portfolio × component × date (EOD)
+--   NOTE: desk-level aggregate still possible
+--   by grouping on DIM.Portfolio.DeskKey
+--
+-- FCT.ActionItem
+--   ADD PortfolioKey INT NULL     -- nullable:
+--   REFERENCES DIM.Portfolio(PortfolioKey);
+--   -- some actions are desk-wide (NULL portfolio)
+--   -- e.g. "IG Cash desk" BS limit, not
+--   -- portfolio-specific
+--   FK count: 5 → 6
+--
+-- FCT.EntityCash: unchanged
+--   Cash positions tracked at entity level,
+--   not portfolio. No PortfolioKey needed.
+--
+-- FCT.MarketData: unchanged
+--   Market observables are global; no portfolio
+--   dimension applies.
+--
+-- FCT.LCRAttribution: unchanged
+--   LCR impact attributed at driver×desk level.
+--   Portfolio is too granular for LCR reporting.</span>
+
+<span class="cm">-- Index recommendations post-Portfolio add:
+-- -- Primary access pattern: by portfolio</span>
+<span class="kw">CREATE</span> <span class="kw">INDEX</span> IX_PosnSnap_Portfolio
+  <span class="kw">ON</span> FCT.PositionSnapshot (PortfolioKey, DateKey)
+  <span class="kw">INCLUDE</span> (DeskKey, Notional, EconomicPL_MTD);
+
+<span class="kw">CREATE</span> <span class="kw">INDEX</span> IX_FTPAttr_Portfolio
+  <span class="kw">ON</span> FCT.FTPAttribution (PortfolioKey, DateKey)
+  <span class="kw">INCLUDE</span> (DeskKey, VolumeEffect, RateEffect,
+            CurveEffect, MixEffect);
+
+<span class="cm">-- SSAS Tabular: add DIM.Portfolio table,
+-- relationship to DIM.Desk (M:1 via DeskKey),
+-- relationships to each impacted fact table.
+-- New hierarchy: Desk → Portfolio → Instrument</span></pre>
+</div>
+</div>
+
+<div class="g2">
+<div>
+<pre><span class="cm">-- DIM.FTPComponent
+-- The four components of a full FTP charge.
+-- Enables slicing FTPAttribution by component
+-- (e.g. "how much of the FTP increase was
+-- the liquidity premium vs capital charge?")</span>
+<span class="kw">CREATE TABLE</span> DIM.FTPComponent (
+  ComponentKey     <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  ComponentCode    <span class="tp">VARCHAR</span>(30)  <span class="kw">NOT NULL UNIQUE</span>,
+  ComponentLabel   <span class="tp">VARCHAR</span>(60),
+  ComponentOrder   <span class="tp">TINYINT</span>,
+  <span class="cm">-- display order in waterfall</span>
+  ComponentGroup   <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'FUNDING'|'LIQUIDITY'|'CAPITAL'</span>
+  IsMarketLinked   <span class="tp">BIT</span>,
+  <span class="cm">-- does it reprice with curves daily?</span>
+  RateBasis        <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- 'SOFR_OIS'|'GC_REPO'|'XCCY'
+  -- 'INTERNAL_CAPITAL_RATE'</span>
+  OwnerGroup       <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'Treasury' | 'Risk' | 'Finance'</span>
+  Description      <span class="tp">NVARCHAR</span>(200)
+);
+<span class="cm">-- Seed data:
+-- 1 | MARGINAL_FUNDING  | Marginal Funding Cost
+-- 2 | LIQUIDITY_PREMIUM | Liquidity Premium
+-- 3 | BS_CHARGE         | Balance Sheet Charge
+-- 4 | CAPITAL_CHARGE    | Capital Charge</span></pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.LCRDriver
+-- Each row is one type of driver that
+-- can move the LCR ratio up or down.
+-- Powers the LCR attribution waterfall
+-- in Tab 4 (EOD Attribution) of the dashboard.
+-- New driver types added as monitoring evolves.</span>
+<span class="kw">CREATE TABLE</span> DIM.LCRDriver (
+  DriverKey        <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  DriverCode       <span class="tp">VARCHAR</span>(40)  <span class="kw">NOT NULL UNIQUE</span>,
+  DriverLabel      <span class="tp">VARCHAR</span>(80),
+  DriverCategory   <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'HQLA' | 'OUTFLOW' | 'INFLOW'</span>
+  ImpactDirection  <span class="tp">CHAR</span>(1),
+  <span class="cm">-- 'P' positive | 'N' negative | 'B' both</span>
+  IsControllable   <span class="tp">BIT</span>,
+  <span class="cm">-- can Treasury/CPT act to change it?</span>
+  LinkedDeskCode   <span class="tp">VARCHAR</span>(20)  <span class="kw">NULL</span>,
+  <span class="cm">-- NULL if entity-level or market-driven</span>
+  SortOrder        <span class="tp">INT</span>
+);
+<span class="cm">-- Seed rows:
+-- DEPOSIT_OUTFLOW  | Deposit outflows      | OUTFLOW
+-- HQLA_MV_CHANGE   | HQLA mark-to-market   | HQLA
+-- NEW_WHOLESALE    | New wholesale funding  | INFLOW
+-- CPT_REPO         | CPT repo growth        | OUTFLOW
+-- DERIV_MARGIN     | Derivative margin      | INFLOW
+-- STRUCT_CREDIT    | Structured credit      | OUTFLOW</span></pre>
+</div>
+</div>
+
+
+<h3>Reference Dimensions</h3>
+
+<div class="g2">
+<div>
+<pre><span class="cm">-- DIM.Region
+-- 4-row lookup: AMER | EMEA | APAC | GLOBAL
+-- Referenced by DIM.Country (RegionKey FK).
+-- Also stored directly in FCT.EntityCash to
+-- power the "can everyone fund themselves?"
+-- entity cash map without a Country join.
+-- GLOBAL = multi-entity / fund-level positions.</span>
+<span class="kw">CREATE TABLE</span> DIM.Region (
+  RegionKey      <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  RegionCode     <span class="tp">CHAR</span>(5)     <span class="kw">NOT NULL UNIQUE</span>,
+  <span class="cm">-- 'AMER' | 'EMEA' | 'APAC' | 'GLOBAL'</span>
+  RegionLabel    <span class="tp">VARCHAR</span>(30),
+  RegionShort    <span class="tp">CHAR</span>(3),
+  <span class="cm">-- 'AM' | 'EM' | 'AP' | 'GL'</span>
+  UTCOffsetPeak  <span class="tp">SMALLINT</span>,
+  <span class="cm">-- hours offset at peak trading time
+  -- AMER=-5, EMEA=+1, APAC=+8</span>
+  PrimaryHub     <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- 'New York' | 'London' | 'Singapore'</span>
+  SortOrder      <span class="tp">TINYINT</span>
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.Country
+-- ISO 3166-1 country reference.
+-- RegionKey links to DIM.Region (snowflake).
+-- Replaces free-text Country CHAR(3) columns
+-- in DIM.Instrument, DIM.Issuer, DIM.LegalEntity.
+-- IsSanctioned / IsEU drive regulatory alerts.
+-- EM classification drives LCR HQLA Level 2B
+-- eligibility for sovereign bonds.</span>
+<span class="kw">CREATE TABLE</span> DIM.Country (
+  CountryKey     <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  ISO2           <span class="tp">CHAR</span>(2)      <span class="kw">NOT NULL UNIQUE</span>,
+  <span class="cm">-- ISO 3166-1 alpha-2: 'US','GB','SG','JP'</span>
+  ISO3           <span class="tp">CHAR</span>(3),
+  <span class="cm">-- ISO 3166-1 alpha-3: 'USA','GBR','SGP'</span>
+  CountryName    <span class="tp">VARCHAR</span>(60),
+  RegionKey      <span class="tp">INT</span>  <span class="kw">NOT NULL</span>
+                 <span class="kw">REFERENCES</span> DIM.Region(RegionKey),
+  <span class="cm">-- snowflake: Country belongs to a Region</span>
+  SubRegion      <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'W_EUROPE'|'N_AMERICA'|'SE_ASIA'
+  -- 'LATAM'|'MENA'|'SSA'</span>
+  PrimaryCurrency <span class="tp">CHAR</span>(3),
+  <span class="cm">-- ISO 4217: 'USD','GBP','SGD','JPY'</span>
+  CentralBank    <span class="tp">VARCHAR</span>(15),
+  <span class="cm">-- 'FED'|'BOE'|'MAS'|'BOJ'</span>
+  IsG10          <span class="tp">BIT</span>,
+  <span class="cm">-- G10 currency countries</span>
+  IsG20          <span class="tp">BIT</span>,
+  IsEU           <span class="tp">BIT</span>,
+  IsEEA          <span class="tp">BIT</span>,
+  IsEM           <span class="tp">BIT</span>,
+  <span class="cm">-- MSCI EM classification</span>
+  IsFrontier     <span class="tp">BIT</span>,
+  IsSanctioned   <span class="tp">BIT</span>,
+  <span class="cm">-- OFAC/HM Treasury/EU sanctions</span>
+  IsFATFGrey     <span class="tp">BIT</span>,
+  <span class="cm">-- FATF grey list</span>
+  SovRatingBucket <span class="tp">CHAR</span>(5),
+  <span class="cm">-- 'AAA'|'AA'|'A'|'BBB'|'HY'</span>
+  HQLASovEligible <span class="tp">BIT</span>,
+  <span class="cm">-- sovereign bonds eligible for LCR Level 2B</span>
+  IsActive       <span class="tp">BIT</span>          <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+</div>
+
+<div class="g2">
+<div>
+<pre><span class="cm">-- DIM.Instrument
+-- Security master for all positions.
+-- IsHQLA/HQLALevel drives LCR calc.
+-- SCD Type 2 on RatingBucket (rating changes
+-- affect FTP charges and LCR treatment).</span>
+<span class="kw">CREATE TABLE</span> DIM.Instrument (
+  InstrumentKey     <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  ISIN              <span class="tp">CHAR</span>(12)      <span class="kw">NULL</span>,
+  Ticker            <span class="tp">VARCHAR</span>(20)   <span class="kw">NULL</span>,
+  InstrumentName    <span class="tp">VARCHAR</span>(120),
+  InstrumentType    <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- 'BOND'|'CDS'|'CLO'|'CDX_INDEX'
+  -- 'IRS'|'REPO'|'ABS'|'EQUITY'</span>
+  IssuerCode        <span class="tp">VARCHAR</span>(20),
+  RatingBucket      <span class="tp">CHAR</span>(5),
+  <span class="cm">-- 'AAA'|'AA'|'A'|'BBB'|'HY'|'NR'</span>
+  RatingAgency      <span class="tp">CHAR</span>(6),
+  Sector            <span class="tp">VARCHAR</span>(40),
+  SectorGroup       <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'FIN'|'CORP'|'SOVEREIGN'|'STRUCT'</span>
+  CountryKey        <span class="tp">INT</span>   <span class="kw">NULL</span>
+                    <span class="kw">REFERENCES</span> DIM.Country(CountryKey),
+  <span class="cm">-- issuer/domicile country (NULL for index)
+  -- replaces Country CHAR(3)</span>
+  Currency          <span class="tp">CHAR</span>(3),
+  CouponType        <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'FIXED'|'FLOAT'|'ZERO'</span>
+  IsHQLA            <span class="tp">BIT</span>,
+  HQLALevel         <span class="tp">TINYINT</span>,
+  <span class="cm">-- 1=Level1(UST) 2a=2A 2b=2B</span>
+  HQLAHaircut_Pct   <span class="tp">DECIMAL</span>(5,4),
+  IsIndex           <span class="tp">BIT</span>,
+  <span class="cm">-- CDX, iTraxx</span>
+  IndexSeries       <span class="tp">VARCHAR</span>(20)   <span class="kw">NULL</span>,
+  RepoEligible      <span class="tp">BIT</span>,
+  SourceSystem      <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- EDM | BLOOMBERG | MARKIT</span>
+  IsActive          <span class="tp">BIT</span>           <span class="kw">DEFAULT</span> 1,
+  <span class="cm">-- SCD Type 2 fields:</span>
+  RowStartDate      <span class="tp">DATE</span>,
+  RowEndDate        <span class="tp">DATE</span>          <span class="kw">NULL</span>,
+  IsCurrent         <span class="tp">BIT</span>           <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.Issuer
+-- Separate from DIM.Instrument.
+-- One issuer may have many instruments.
+-- Drives JtD aggregation (all instruments
+-- of same issuer sum to one JtD exposure)
+-- and concentration monitoring.</span>
+<span class="kw">CREATE TABLE</span> DIM.Issuer (
+  IssuerKey         <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  IssuerCode        <span class="tp">VARCHAR</span>(20)   <span class="kw">NOT NULL UNIQUE</span>,
+  IssuerName        <span class="tp">VARCHAR</span>(100),
+  IssuerShortName   <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- e.g. 'IBM', 'Ford', 'Brazil'</span>
+  IssuerType        <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'CORP'|'SOVEREIGN'|'QUASI_SOV'
+  -- 'SUPRANATIONAL'|'CLO_SPV'</span>
+  Sector            <span class="tp">VARCHAR</span>(40),
+  CountryKey        <span class="tp">INT</span>   <span class="kw">NULL</span>
+                    <span class="kw">REFERENCES</span> DIM.Country(CountryKey),
+  <span class="cm">-- domicile country; NULL for supra-national
+  -- replaces Country CHAR(3) + Region VARCHAR(10)
+  -- RegionKey resolved via DIM.Country.RegionKey</span>
+  RatingBucket      <span class="tp">CHAR</span>(5),
+  <span class="cm">-- worst-of Moody/S&amp;P/Fitch</span>
+  IsSovereign       <span class="tp">BIT</span>,
+  IsIndex           <span class="tp">BIT</span>,
+  <span class="cm">-- CDX reference entity?</span>
+  DefaultProb_Pct   <span class="tp">DECIMAL</span>(7,5),
+  <span class="cm">-- 1Y PD from CDS spread</span>
+  RecoveryRate_Pct  <span class="tp">DECIMAL</span>(5,4),
+  <span class="cm">-- standard: 0.40 for IG corps</span>
+  IsWatchlist       <span class="tp">BIT</span>,
+  <span class="cm">-- internal credit watchlist</span>
+  CreditResearchURL <span class="tp">VARCHAR</span>(200)  <span class="kw">NULL</span>,
+  LEI               <span class="tp">CHAR</span>(20)      <span class="kw">NULL</span>,
+  <span class="cm">-- Legal Entity Identifier (global)</span>
+  ParentIssuerCode  <span class="tp">VARCHAR</span>(20)   <span class="kw">NULL</span>,
+  <span class="cm">-- for subsidiary rollup</span>
+  IsActive          <span class="tp">BIT</span>           <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+</div>
+
+<div class="g3">
+<div>
+<pre><span class="cm">-- DIM.LegalEntity
+-- One row per booking entity.
+-- Drives the entity cash map
+-- ("can everyone fund themselves?").
+-- TimeZone drives close-of-business
+-- alerts for each entity.</span>
+<span class="kw">CREATE TABLE</span> DIM.LegalEntity (
+  EntityKey      <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  EntityCode     <span class="tp">VARCHAR</span>(20)  <span class="kw">NOT NULL UNIQUE</span>,
+  EntityName     <span class="tp">VARCHAR</span>(80),
+  EntityShort    <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'NYC'|'LON'|'SIN'|'TKY'</span>
+  City           <span class="tp">VARCHAR</span>(30),
+  CountryKey     <span class="tp">INT</span>   <span class="kw">NOT NULL</span>
+                 <span class="kw">REFERENCES</span> DIM.Country(CountryKey),
+  <span class="cm">-- replaces Country CHAR(3) + Region VARCHAR(10)
+  -- Region resolved via DIM.Country.RegionKey</span>
+  PrimaryCCY     <span class="tp">CHAR</span>(3),
+  TimeZone       <span class="tp">VARCHAR</span>(40),
+  <span class="cm">-- IANA tz: 'America/New_York'</span>
+  LocalCloseET   <span class="tp">TIME</span>(0),
+  <span class="cm">-- CoB in ET for alert triggers</span>
+  IsHub          <span class="tp">BIT</span>,
+  <span class="cm">-- primary interco lending entity</span>
+  IsRegulated    <span class="tp">BIT</span>,
+  RegulatorCode  <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'FED'|'PRA'|'MAS'|'FSA'</span>
+  LCRSupervisor  <span class="tp">VARCHAR</span>(10),
+  IntercoLimit   <span class="tp">DECIMAL</span>(18,2),
+  <span class="cm">-- max interco lending USD</span>
+  IsActive       <span class="tp">BIT</span>          <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.Currency
+-- All currencies appearing in positions,
+-- cash, and market data. IsHardCurrency
+-- drives XCCY basis monitoring logic.
+-- XCCYBasisFactor used in FTP calc
+-- for cross-currency-funded trades.</span>
+<span class="kw">CREATE TABLE</span> DIM.Currency (
+  CurrencyKey      <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  CurrencyCode     <span class="tp">CHAR</span>(3)     <span class="kw">NOT NULL UNIQUE</span>,
+  CurrencyName     <span class="tp">VARCHAR</span>(40),
+  CurrencySymbol   <span class="tp">VARCHAR</span>(5),
+  Region           <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'NA'|'EU'|'APAC'|'EM'</span>
+  IsHardCurrency   <span class="tp">BIT</span>,
+  <span class="cm">-- USD, EUR, GBP, JPY, CHF</span>
+  IsGovtReserve    <span class="tp">BIT</span>,
+  <span class="cm">-- held in CB reserve accounts</span>
+  IsXCCYMonitored  <span class="tp">BIT</span>,
+  <span class="cm">-- actively track XCCY basis</span>
+  XCCYPair_vs_USD  <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- Bloomberg ticker e.g. 'EURUSD'</span>
+  XCCYBasisTicker  <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- e.g. 'USDJPY3M CMPN Curncy'</span>
+  DecimalPlaces    <span class="tp">TINYINT</span>    <span class="kw">DEFAULT</span> 2,
+  ISO4217_Num      <span class="tp">SMALLINT</span>,
+  IsActive         <span class="tp">BIT</span>        <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.RiskFactor
+-- One row per market observable used
+-- in FCT.MarketData. FactorCode is the
+-- canonical identifier used across
+-- all pipelines. SourcePriority drives
+-- the fallback logic: if BBG fails,
+-- use Reuters (priority=2), then ICE.
+-- Tenor drives yield curve construction.</span>
+<span class="kw">CREATE TABLE</span> DIM.RiskFactor (
+  FactorKey        <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  FactorCode       <span class="tp">VARCHAR</span>(50)  <span class="kw">NOT NULL UNIQUE</span>,
+  <span class="cm">-- e.g. 'CDX_HY_5Y', 'UST_10Y'
+  --      'SOFR_ON', 'USDJPY_XCCY_3M'</span>
+  FactorLabel      <span class="tp">VARCHAR</span>(80),
+  AssetClass       <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'RATE'|'CREDIT'|'FX'|'REPO'
+  -- 'EQUITY_VOL'</span>
+  SubClass         <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'GOVT'|'XCCY_BASIS'|'IG_SPREAD'
+  -- 'HY_SPREAD'|'EM_SPREAD'</span>
+  Tenor            <span class="tp">VARCHAR</span>(10)  <span class="kw">NULL</span>,
+  <span class="cm">-- '1M','3M','6M','1Y','2Y','10Y'</span>
+  Tenor_Days       <span class="tp">SMALLINT</span>    <span class="kw">NULL</span>,
+  Unit             <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'BPS'|'PCT'|'SPOT'|'VOL'</span>
+  BloombergTicker  <span class="tp">VARCHAR</span>(50),
+  ReutersTicker    <span class="tp">VARCHAR</span>(50),
+  ICETicker        <span class="tp">VARCHAR</span>(50),
+  SourcePriority   <span class="tp">TINYINT</span>    <span class="kw">DEFAULT</span> 1,
+  <span class="cm">-- 1=BBG, 2=Reuters, 3=ICE</span>
+  IsYieldCurve     <span class="tp">BIT</span>,
+  IsCreditIndex    <span class="tp">BIT</span>,
+  IsFX             <span class="tp">BIT</span>,
+  IsRepo           <span class="tp">BIT</span>,
+  IsActive         <span class="tp">BIT</span>        <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+</div>
+
+
+<h3>Supporting Dimensions</h3>
+<div class="g2">
+<div>
+<pre><span class="cm">-- DIM.FundingSource
+-- Classification of where entity funding
+-- comes from. Drives the concentration
+-- monitoring donut chart (Treasury Ops tab)
+-- and LCR NSFR stable-funding scoring.
+-- ConcentrationTier flags top-3 single
+-- counterparty risks for Treasury action.</span>
+<span class="kw">CREATE TABLE</span> DIM.FundingSource (
+  FundingSourceKey  <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  SourceCode        <span class="tp">VARCHAR</span>(30)  <span class="kw">NOT NULL UNIQUE</span>,
+  SourceLabel       <span class="tp">VARCHAR</span>(60),
+  SourceType        <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'RETAIL_DEPOSIT'
+  -- 'CORPORATE_DEPOSIT'
+  -- 'WHOLESALE_UNSECURED'
+  -- 'REPO_SECURED'
+  -- 'INTERCOMPANY'
+  -- 'COVERED_BOND'
+  -- 'CB_RESERVE'</span>
+  IsRetail          <span class="tp">BIT</span>,
+  IsStable          <span class="tp">BIT</span>,
+  <span class="cm">-- NSFR Available Stable Funding</span>
+  NSFRFactor        <span class="tp">DECIMAL</span>(4,3),
+  <span class="cm">-- 0.0 – 1.0 per Basel III</span>
+  LCROutflowRate    <span class="tp">DECIMAL</span>(4,3),
+  <span class="cm">-- assumed runoff % for LCR</span>
+  Tenor             <span class="tp">VARCHAR</span>(15),
+  <span class="cm">-- 'O/N'|'1W'|'1M'|'3M+'|'DEMAND'</span>
+  ConcentrationTier <span class="tp">TINYINT</span>,
+  <span class="cm">-- 1=highest risk, 3=lowest</span>
+  ColourCode        <span class="tp">CHAR</span>(7),
+  <span class="cm">-- hex for donut chart segment</span>
+  SortOrder         <span class="tp">INT</span>
+);</pre>
+</div>
+<div>
+<pre><span class="cm">-- DIM.ActionType
+-- Classification of action items generated
+-- by the Monitor → Diagnose → Act engine.
+-- CategoryCode groups related actions for
+-- the summary KPI row on Tab 6.
+-- ResponseTimeSLA drives the "act by" label
+-- shown on each action card in the dashboard.</span>
+<span class="kw">CREATE TABLE</span> DIM.ActionType (
+  ActionTypeKey    <span class="tp">INT</span>  <span class="kw">IDENTITY</span>(1,1) <span class="kw">PRIMARY KEY</span>,
+  ActionCode       <span class="tp">VARCHAR</span>(40)  <span class="kw">NOT NULL UNIQUE</span>,
+  ActionLabel      <span class="tp">VARCHAR</span>(80),
+  CategoryCode     <span class="tp">VARCHAR</span>(20),
+  <span class="cm">-- 'FUNDING'     : cash/liquidity
+  -- 'RISK_HEDGE'  : CPT hedge mgmt
+  -- 'LIMIT_BREACH': BS/FTP limits
+  -- 'FTP_ROTATE'  : portfolio economics
+  -- 'LCR_PROTECT' : LCR headroom</span>
+  Hat              <span class="tp">VARCHAR</span>(10),
+  <span class="cm">-- 'TSY'|'CPT'|'BOTH'</span>
+  SeverityDefault  <span class="tp">CHAR</span>(1),
+  <span class="cm">-- 'R' red | 'A' amber | 'G' green</span>
+  ResponseTimeSLA  <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- 'Same day'|'Within 2 hours'
+  -- 'This week'|'Next review'</span>
+  EscalationOwner  <span class="tp">VARCHAR</span>(30),
+  <span class="cm">-- 'Dual-Hat Head'|'Treasury'|'Risk'</span>
+  IsAutomatable    <span class="tp">BIT</span>,
+  <span class="cm">-- can SSIS trigger action directly?</span>
+  MonitorTemplate  <span class="tp">NVARCHAR</span>(300),
+  DiagnoseTemplate <span class="tp">NVARCHAR</span>(300),
+  ActionTemplate   <span class="tp">NVARCHAR</span>(300),
+  <span class="cm">-- parameterised text templates
+  -- {metric}, {value}, {threshold}
+  -- populated at runtime by SQL proc</span>
+  IsActive         <span class="tp">BIT</span>          <span class="kw">DEFAULT</span> 1
+);</pre>
+</div>
+</div>
+
+<!-- IMPLEMENTATION ARCHITECTURE -->
+<h2>Implementation Architecture — Data Pipeline Stack</h2>
+
+<p>Data flows left-to-right through five technology layers. SQL Agent (bottom bar) orchestrates job scheduling and failure alerting across all layers. The SSAS Tabular model runs in hybrid mode: Import for EOD/historical facts, DirectQuery for intraday snapshots (<code style="font-family:'IBM Plex Mono',monospace;font-size:11px">IsCurrentSnapshot = 1</code>).</p>
+
+<div class="callout callout-info" style="margin-bottom:16px">
+  <strong>Read direction:</strong> Source Systems feed SSIS packages every 15 min (intraday) and at three batch windows (SoD 06:00-08:00, EoD 19:00-21:00 ET). SSIS lands data into SQL Server staging, then upserts into DIM/FCT tables. SSAS processes the Tabular model post-load. Power BI connects live to SSAS -- no data import into the BI layer.
+</div>
+
+<div class="schema-wrap" style="overflow-x:auto">
+<svg viewBox="0 0 1360 660" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:900px;display:block;font-family:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#94a3b8"/></marker>
+    <marker id="arr-dq" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f2bf0f"/></marker>
+    <marker id="arr-imp" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7dd3fc"/></marker>
+  </defs>
+  <rect width="1360" height="660" fill="#0c1524" rx="10"/>
+
+  <!-- COL 1: SOURCE SYSTEMS -->
+  <rect x="14" y="14" width="174" height="510" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <rect x="14" y="14" width="174" height="36" rx="6" fill="#334155"/>
+  <rect x="14" y="38" width="174" height="12" fill="#334155"/>
+  <text x="101" y="36" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8" letter-spacing="0.07em">SOURCE SYSTEMS</text>
+  <text x="101" y="53" text-anchor="middle" font-size="9" fill="#64748b">Front-office + Reference</text>
+
+  <rect x="24" y="64" width="154" height="44" rx="4" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="101" y="80" text-anchor="middle" font-size="10" font-weight="600" fill="#93c5fd">Bloomberg B-PIPE</text>
+  <text x="101" y="92" text-anchor="middle" font-size="8.5" fill="#64748b">Market data / curves / FX</text>
+  <text x="101" y="103" text-anchor="middle" font-size="8" fill="#475569">RT + EOD snapshots</text>
+
+  <rect x="24" y="114" width="154" height="44" rx="4" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="101" y="130" text-anchor="middle" font-size="10" font-weight="600" fill="#fdba74">TMS / OMS</text>
+  <text x="101" y="142" text-anchor="middle" font-size="8.5" fill="#64748b">Bloomberg AIM / Murex</text>
+  <text x="101" y="153" text-anchor="middle" font-size="8" fill="#475569">Positions / trades / books</text>
+
+  <rect x="24" y="164" width="154" height="44" rx="4" fill="#0f172a" stroke="#065f46" stroke-width="1"/>
+  <text x="101" y="180" text-anchor="middle" font-size="10" font-weight="600" fill="#6ee7b7">Risk Engine</text>
+  <text x="101" y="192" text-anchor="middle" font-size="8.5" fill="#64748b">CS01 / DV01 / JtD / VaR</text>
+  <text x="101" y="203" text-anchor="middle" font-size="8" fill="#475569">Sensitivities (EOD)</text>
+
+  <rect x="24" y="214" width="154" height="44" rx="4" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="101" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#fdba74">FTP Engine</text>
+  <text x="101" y="242" text-anchor="middle" font-size="8.5" fill="#64748b">4-component attribution</text>
+  <text x="101" y="253" text-anchor="middle" font-size="8" fill="#475569">Marginal/Liq/BS/Capital</text>
+
+  <rect x="24" y="264" width="74" height="44" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="61" y="280" text-anchor="middle" font-size="9" font-weight="600" fill="#94a3b8">GL / Sub</text>
+  <text x="61" y="292" text-anchor="middle" font-size="8" fill="#64748b">PnL / accruals</text>
+  <text x="61" y="303" text-anchor="middle" font-size="8" fill="#475569">EOD recon</text>
+
+  <rect x="104" y="264" width="74" height="44" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="141" y="280" text-anchor="middle" font-size="9" font-weight="600" fill="#94a3b8">Reg Calc</text>
+  <text x="141" y="292" text-anchor="middle" font-size="8" fill="#64748b">LCR / NSFR</text>
+  <text x="141" y="303" text-anchor="middle" font-size="8" fill="#475569">Entity ratios</text>
+
+  <rect x="24" y="314" width="154" height="44" rx="4" fill="#0f172a" stroke="#1e40af" stroke-width="1"/>
+  <text x="101" y="330" text-anchor="middle" font-size="10" font-weight="600" fill="#93c5fd">EDM / Reference Store</text>
+  <text x="101" y="342" text-anchor="middle" font-size="8.5" fill="#64748b">Instrument / Issuer / Entity</text>
+  <text x="101" y="353" text-anchor="middle" font-size="8" fill="#475569">Country / Currency / Desk</text>
+
+  <rect x="24" y="364" width="154" height="44" rx="4" fill="#0f172a" stroke="#065f46" stroke-width="1"/>
+  <text x="101" y="380" text-anchor="middle" font-size="10" font-weight="600" fill="#6ee7b7">Cash / Treasury Mgmt</text>
+  <text x="101" y="392" text-anchor="middle" font-size="8.5" fill="#64748b">Interco / funding lines</text>
+  <text x="101" y="403" text-anchor="middle" font-size="8" fill="#475569">EntityCash positions</text>
+
+  <text x="101" y="432" text-anchor="middle" font-size="9" fill="#3b82f6">8 source feeds</text>
+  <text x="101" y="446" text-anchor="middle" font-size="8.5" fill="#475569">FTP push / SFTP / Bloomberg API</text>
+
+  <!-- COL 2: SSIS -->
+  <rect x="204" y="14" width="212" height="510" rx="6" fill="#1c0f06" stroke="#7c3d12" stroke-width="1.5"/>
+  <rect x="204" y="14" width="212" height="36" rx="6" fill="#7c3d12"/>
+  <rect x="204" y="38" width="212" height="12" fill="#7c3d12"/>
+  <text x="310" y="36" text-anchor="middle" font-size="11" font-weight="600" fill="#fed7aa" letter-spacing="0.07em">SSIS ETL</text>
+  <text x="310" y="53" text-anchor="middle" font-size="9" fill="#92400e">SQL Server Integration Services</text>
+
+  <rect x="214" y="62" width="192" height="16" rx="3" fill="#431407"/>
+  <text x="310" y="73" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fb923c">START-OF-DAY  06:00-08:00 ET</text>
+
+  <rect x="214" y="80" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="92" font-size="8.5" font-weight="600" fill="#fdba74">PKG_SoD_MarketData</text>
+  <text x="224" y="102" font-size="8" fill="#64748b">Bloomberg curves / spreads / FX</text>
+
+  <rect x="214" y="108" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="120" font-size="8.5" font-weight="600" fill="#fdba74">PKG_SoD_Positions</text>
+  <text x="224" y="130" font-size="8" fill="#64748b">TMS to FCT.PositionSnapshot (SoD)</text>
+
+  <rect x="214" y="136" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="148" font-size="8.5" font-weight="600" fill="#fdba74">PKG_SoD_Funding</text>
+  <text x="224" y="158" font-size="8" fill="#64748b">Treasury system to FCT.EntityCash</text>
+
+  <rect x="214" y="168" width="192" height="16" rx="3" fill="#431407"/>
+  <text x="310" y="179" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fb923c">INTRADAY  every 15 min</text>
+
+  <rect x="214" y="186" width="192" height="26" rx="3" fill="#0f172a" stroke="#b45309" stroke-width="1"/>
+  <text x="224" y="198" font-size="8.5" font-weight="600" fill="#fcd34d">PKG_Intraday_Positions</text>
+  <text x="224" y="208" font-size="8" fill="#64748b">MERGE upsert FCT.PositionSnapshot</text>
+
+  <rect x="214" y="214" width="192" height="26" rx="3" fill="#0f172a" stroke="#b45309" stroke-width="1"/>
+  <text x="224" y="226" font-size="8.5" font-weight="600" fill="#fcd34d">PKG_Intraday_Cash</text>
+  <text x="224" y="236" font-size="8" fill="#64748b">MERGE upsert FCT.EntityCash</text>
+
+  <rect x="214" y="246" width="192" height="16" rx="3" fill="#431407"/>
+  <text x="310" y="257" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fb923c">END-OF-DAY  19:00-21:00 ET</text>
+
+  <rect x="214" y="264" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="276" font-size="8.5" font-weight="600" fill="#fdba74">PKG_EoD_FTP_Attribution</text>
+  <text x="224" y="286" font-size="8" fill="#64748b">Calls usp_CalcFTPAttribution</text>
+
+  <rect x="214" y="292" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="304" font-size="8.5" font-weight="600" fill="#fdba74">PKG_EoD_Risk_Snap</text>
+  <text x="224" y="314" font-size="8" fill="#64748b">Risk Engine to FCT.RiskSensitivities</text>
+
+  <rect x="214" y="320" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="332" font-size="8.5" font-weight="600" fill="#fdba74">PKG_EoD_LCR</text>
+  <text x="224" y="342" font-size="8" fill="#64748b">Reg Calc to FCT.LCRAttribution</text>
+
+  <rect x="214" y="348" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="360" font-size="8.5" font-weight="600" fill="#fdba74">PKG_EoD_Recon</text>
+  <text x="224" y="370" font-size="8" fill="#64748b">GL reconciliation / action items</text>
+
+  <rect x="214" y="380" width="192" height="16" rx="3" fill="#431407"/>
+  <text x="310" y="391" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fb923c">REFERENCE  Sun 02:00 ET</text>
+
+  <rect x="214" y="398" width="192" height="26" rx="3" fill="#0f172a" stroke="#7c3d12" stroke-width="1"/>
+  <text x="224" y="410" font-size="8.5" font-weight="600" fill="#fdba74">PKG_Ref_Data</text>
+  <text x="224" y="420" font-size="8" fill="#64748b">EDM to all DIM tables (SCD 2)</text>
+
+  <text x="310" y="450" text-anchor="middle" font-size="9" fill="#f97316">10 packages / SSISDB catalogue</text>
+  <text x="310" y="464" text-anchor="middle" font-size="8.5" fill="#64748b">Errors: STG.ErrorLog + SQL Agent alert</text>
+
+  <!-- COL 3: SQL SERVER -->
+  <rect x="432" y="14" width="268" height="510" rx="6" fill="#001428" stroke="#1e3a5f" stroke-width="2"/>
+  <rect x="432" y="14" width="268" height="36" rx="6" fill="#002855"/>
+  <rect x="432" y="38" width="268" height="12" fill="#002855"/>
+  <text x="566" y="36" text-anchor="middle" font-size="11" font-weight="600" fill="#bfdbfe" letter-spacing="0.07em">SQL SERVER DW (TreasuryDW)</text>
+  <text x="566" y="53" text-anchor="middle" font-size="9" fill="#3b82f6">Curated fact and dimension tables / 4 schemas</text>
+
+  <rect x="442" y="62" width="248" height="16" rx="3" fill="#0c2040"/>
+  <text x="566" y="73" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7dd3fc" letter-spacing="0.06em">STG -- STAGING</text>
+
+  <rect x="442" y="80" width="120" height="48" rx="3" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="502" y="96" text-anchor="middle" font-size="9" font-weight="600" fill="#7dd3fc">STG.Positions</text>
+  <text x="502" y="108" text-anchor="middle" font-size="8" fill="#64748b">Raw TMS extract</text>
+  <text x="502" y="120" text-anchor="middle" font-size="8" fill="#475569">Validate then upsert</text>
+
+  <rect x="568" y="80" width="122" height="48" rx="3" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="629" y="96" text-anchor="middle" font-size="9" font-weight="600" fill="#7dd3fc">STG.MarketData</text>
+  <text x="629" y="108" text-anchor="middle" font-size="8" fill="#64748b">Bloomberg snap</text>
+  <text x="629" y="120" text-anchor="middle" font-size="8" fill="#475569">Truncate + reload</text>
+
+  <rect x="442" y="134" width="248" height="16" rx="3" fill="#0c2040"/>
+  <text x="566" y="145" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7dd3fc" letter-spacing="0.06em">DIM -- 16 DIMENSION TABLES</text>
+
+  <rect x="442" y="152" width="56" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="470" y="165" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">DIM.Date</text>
+  <text x="470" y="172" text-anchor="middle" font-size="7" fill="#64748b">conformed</text>
+
+  <rect x="502" y="152" width="56" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="530" y="165" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">DIM.Time</text>
+  <text x="530" y="172" text-anchor="middle" font-size="7" fill="#64748b">conformed</text>
+
+  <rect x="562" y="152" width="66" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="595" y="165" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">DIM.Scenario</text>
+  <text x="595" y="172" text-anchor="middle" font-size="7" fill="#64748b">conformed</text>
+
+  <rect x="632" y="152" width="58" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="661" y="165" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">DIM.Desk</text>
+  <text x="661" y="172" text-anchor="middle" font-size="7" fill="#64748b">SCD1</text>
+
+  <rect x="442" y="180" width="68" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="476" y="193" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">DIM.Portfolio</text>
+  <text x="476" y="200" text-anchor="middle" font-size="7" fill="#64748b">SCD2 / snowflake</text>
+
+  <rect x="514" y="180" width="70" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="549" y="193" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">DIM.Instrument</text>
+  <text x="549" y="200" text-anchor="middle" font-size="7" fill="#64748b">SCD2 rating</text>
+
+  <rect x="588" y="180" width="56" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="616" y="193" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">DIM.Issuer</text>
+  <text x="616" y="200" text-anchor="middle" font-size="7" fill="#64748b">SCD1</text>
+
+  <rect x="648" y="180" width="42" height="24" rx="3" fill="#1a3a6e" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="669" y="193" text-anchor="middle" font-size="8" font-weight="600" fill="#bfdbfe">+9 dims</text>
+  <text x="669" y="200" text-anchor="middle" font-size="7" fill="#64748b">more</text>
+
+  <rect x="442" y="210" width="248" height="16" rx="3" fill="#0c2040"/>
+  <text x="566" y="221" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7dd3fc" letter-spacing="0.06em">FCT -- 7 FACT TABLES</text>
+
+  <rect x="442" y="228" width="248" height="116" rx="3" fill="#0a1628" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="452" y="244" font-size="9" font-weight="600" fill="#93c5fd">FCT.PositionSnapshot</text>
+  <text x="682" y="244" text-anchor="end" font-size="8" fill="#64748b">8 FKs / 15-min intraday</text>
+  <text x="452" y="258" font-size="9" font-weight="600" fill="#93c5fd">FCT.RiskSensitivities</text>
+  <text x="682" y="258" text-anchor="end" font-size="8" fill="#64748b">8 FKs / CS01-DV01-JtD</text>
+  <text x="452" y="272" font-size="9" font-weight="600" fill="#93c5fd">FCT.EntityCash</text>
+  <text x="682" y="272" text-anchor="end" font-size="8" fill="#64748b">7 FKs / 15-min intraday</text>
+  <text x="452" y="286" font-size="9" font-weight="600" fill="#93c5fd">FCT.MarketData</text>
+  <text x="682" y="286" text-anchor="end" font-size="8" fill="#64748b">4 FKs / SoD + RT</text>
+  <text x="452" y="300" font-size="9" font-weight="600" fill="#93c5fd">FCT.FTPAttribution</text>
+  <text x="682" y="300" text-anchor="end" font-size="8" fill="#64748b">4 FKs / EOD</text>
+  <text x="452" y="314" font-size="9" font-weight="600" fill="#93c5fd">FCT.LCRAttribution</text>
+  <text x="682" y="314" text-anchor="end" font-size="8" fill="#64748b">4 FKs / EOD</text>
+  <text x="452" y="328" font-size="9" font-weight="600" fill="#93c5fd">FCT.ActionItem</text>
+  <text x="682" y="328" text-anchor="end" font-size="8" fill="#64748b">6 FKs / threshold-driven</text>
+  <line x1="442" y1="334" x2="690" y2="334" stroke="#1e3a5f" stroke-width="0.5"/>
+  <text x="452" y="344" font-size="8" fill="#475569">IsCurrentSnapshot=1 -- SSAS DirectQuery</text>
+
+  <rect x="442" y="350" width="248" height="16" rx="3" fill="#0c2040"/>
+  <text x="566" y="361" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7dd3fc" letter-spacing="0.06em">CFG -- CONFIGURATION</text>
+
+  <rect x="442" y="368" width="120" height="34" rx="3" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="502" y="381" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7dd3fc">CFG.MetricThreshold</text>
+  <text x="502" y="393" text-anchor="middle" font-size="8" fill="#475569">Monitor-Diagnose-Act</text>
+
+  <rect x="568" y="368" width="122" height="34" rx="3" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="629" y="381" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7dd3fc">CFG.ScenarioParam</text>
+  <text x="629" y="393" text-anchor="middle" font-size="8" fill="#475569">Shock bps / PLMult</text>
+
+  <rect x="442" y="408" width="248" height="44" rx="3" fill="#0a1a0a" stroke="#14532d" stroke-width="1"/>
+  <text x="452" y="422" font-size="9" font-weight="600" fill="#4ade80">Key stored procs</text>
+  <text x="452" y="435" font-size="8" fill="#64748b">usp_CalcFTPAttribution / usp_GenActionItems</text>
+  <text x="452" y="447" font-size="8" fill="#64748b">usp_ReconcilePositions / usp_LoadLCRAttrib</text>
+
+  <text x="566" y="474" text-anchor="middle" font-size="9" fill="#3b82f6">16 dims / 7 facts / 4 schemas / CCI on all facts</text>
+
+  <!-- COL 4: SSAS -->
+  <rect x="716" y="14" width="218" height="510" rx="6" fill="#071a0e" stroke="#14532d" stroke-width="1.5"/>
+  <rect x="716" y="14" width="218" height="36" rx="6" fill="#14532d"/>
+  <rect x="716" y="38" width="218" height="12" fill="#14532d"/>
+  <text x="825" y="36" text-anchor="middle" font-size="11" font-weight="600" fill="#bbf7d0" letter-spacing="0.07em">SSAS TABULAR</text>
+  <text x="825" y="53" text-anchor="middle" font-size="9" fill="#166534">Semantic model / Compat 1600</text>
+
+  <rect x="726" y="62" width="198" height="16" rx="3" fill="#0a2510"/>
+  <text x="825" y="73" text-anchor="middle" font-size="8.5" font-weight="600" fill="#4ade80">QUERY MODES</text>
+
+  <rect x="726" y="80" width="94" height="58" rx="3" fill="#0f172a" stroke="#166534" stroke-width="1"/>
+  <text x="773" y="96" text-anchor="middle" font-size="9" font-weight="600" fill="#7dd3fc">Import Mode</text>
+  <text x="773" y="109" text-anchor="middle" font-size="8" fill="#64748b">EOD + historical</text>
+  <text x="773" y="121" text-anchor="middle" font-size="8" fill="#64748b">facts in memory</text>
+  <text x="773" y="133" text-anchor="middle" font-size="7.5" fill="#475569">Refresh: SoD + EoD</text>
+
+  <rect x="824" y="80" width="100" height="58" rx="3" fill="#0f172a" stroke="#ca8a04" stroke-width="1"/>
+  <text x="874" y="96" text-anchor="middle" font-size="9" font-weight="600" fill="#fcd34d">DirectQuery</text>
+  <text x="874" y="109" text-anchor="middle" font-size="8" fill="#64748b">Intraday rows</text>
+  <text x="874" y="121" text-anchor="middle" font-size="8" fill="#64748b">IsCurrentSnap=1</text>
+  <text x="874" y="133" text-anchor="middle" font-size="7.5" fill="#475569">Live SQL passthru</text>
+
+  <rect x="726" y="144" width="198" height="16" rx="3" fill="#0a2510"/>
+  <text x="825" y="155" text-anchor="middle" font-size="8.5" font-weight="600" fill="#4ade80">KEY MEASURES (DAX)</text>
+
+  <rect x="726" y="162" width="198" height="104" rx="3" fill="#0a1628" stroke="#166534" stroke-width="1"/>
+  <text x="736" y="178" font-size="8.5" fill="#86efac">[Economic P&amp;L MTD]</text>
+  <text x="736" y="192" font-size="8.5" fill="#86efac">[CS01 Unrealised Total]</text>
+  <text x="736" y="206" font-size="8.5" fill="#86efac">[FTP Net Charge -- 4 component]</text>
+  <text x="736" y="220" font-size="8.5" fill="#86efac">[LCR Headroom vs Limit]</text>
+  <text x="736" y="234" font-size="8.5" fill="#86efac">[Hedge Effectiveness Ratio]</text>
+  <text x="736" y="248" font-size="8.5" fill="#86efac">[FTP Attribution Waterfall]</text>
+  <text x="736" y="262" font-size="8.5" fill="#86efac">[Entity Cash vs Trigger]</text>
+
+  <rect x="726" y="272" width="198" height="16" rx="3" fill="#0a2510"/>
+  <text x="825" y="283" text-anchor="middle" font-size="8.5" font-weight="600" fill="#4ade80">CALCULATION GROUPS</text>
+
+  <rect x="726" y="290" width="198" height="50" rx="3" fill="#0f172a" stroke="#166534" stroke-width="1"/>
+  <text x="736" y="306" font-size="8.5" fill="#64748b">Scenario: BASE / ADVERSE / SEVERE</text>
+  <text x="736" y="319" font-size="8.5" fill="#64748b">Time intel: MTD / QTD / YTD</text>
+  <text x="736" y="332" font-size="8.5" fill="#64748b">Currency: USD / local ccy</text>
+
+  <rect x="726" y="346" width="198" height="16" rx="3" fill="#0a2510"/>
+  <text x="825" y="357" text-anchor="middle" font-size="8.5" font-weight="600" fill="#4ade80">ROW-LEVEL SECURITY</text>
+
+  <rect x="726" y="364" width="198" height="50" rx="3" fill="#0f172a" stroke="#166534" stroke-width="1"/>
+  <text x="736" y="380" font-size="8.5" fill="#64748b">DualHatHead: all desks + entities</text>
+  <text x="736" y="393" font-size="8.5" fill="#64748b">DeskHead: own DeskKey only</text>
+  <text x="736" y="406" font-size="8.5" fill="#64748b">EntityTreasury: cash view only</text>
+
+  <rect x="726" y="420" width="198" height="16" rx="3" fill="#0a2510"/>
+  <text x="825" y="431" text-anchor="middle" font-size="8.5" font-weight="600" fill="#4ade80">HIERARCHY</text>
+  <rect x="726" y="438" width="198" height="32" rx="3" fill="#0f172a" stroke="#166534" stroke-width="1"/>
+  <text x="736" y="452" font-size="8.5" fill="#64748b">BusinessLine / Division / Desk /</text>
+  <text x="736" y="464" font-size="8.5" fill="#64748b">Portfolio / Position / Instrument</text>
+
+  <text x="825" y="492" text-anchor="middle" font-size="8.5" fill="#166534">On-premises AS / Compat 1600</text>
+
+  <!-- COL 5: POWER BI -->
+  <rect x="950" y="14" width="196" height="510" rx="6" fill="#0f0f1e" stroke="#f2bf0f" stroke-width="1.5"/>
+  <rect x="950" y="14" width="196" height="36" rx="6" fill="#1a1400"/>
+  <rect x="950" y="38" width="196" height="12" fill="#1a1400"/>
+  <text x="1048" y="36" text-anchor="middle" font-size="11" font-weight="600" fill="#f2bf0f" letter-spacing="0.07em">POWER BI</text>
+  <text x="1048" y="53" text-anchor="middle" font-size="9" fill="#92400e">Dashboards / Drillthrough / Exec</text>
+
+  <rect x="960" y="62" width="176" height="26" rx="3" fill="#1a1a00" stroke="#ca8a04" stroke-width="1"/>
+  <text x="1048" y="75" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fcd34d">Live connection to SSAS Tabular</text>
+  <text x="1048" y="86" text-anchor="middle" font-size="8" fill="#64748b">No data import into .pbix</text>
+
+  <rect x="960" y="94" width="176" height="16" rx="3" fill="#1a1400"/>
+  <text x="1048" y="105" text-anchor="middle" font-size="8.5" font-weight="600" fill="#f2bf0f">REPORT TABS</text>
+
+  <rect x="960" y="112" width="176" height="194" rx="3" fill="#0a0a14" stroke="#ca8a04" stroke-width="1"/>
+  <text x="970" y="130" font-size="8.5" font-weight="600" fill="#fbbf24">Tab 0  Dual-Hat Command</text>
+  <text x="970" y="141" font-size="8" fill="#475569">Real-time dual-hat KPI overview</text>
+  <line x1="960" y1="147" x2="1136" y2="147" stroke="#1a1400" stroke-width="1"/>
+  <text x="970" y="161" font-size="8.5" font-weight="600" fill="#fbbf24">Tab 1  Start-of-Day Pulse</text>
+  <text x="970" y="172" font-size="8" fill="#475569">SoD checklist / limit breaches</text>
+  <line x1="960" y1="178" x2="1136" y2="178" stroke="#1a1400" stroke-width="1"/>
+  <text x="970" y="192" font-size="8.5" font-weight="600" fill="#fbbf24">Tab 2  Treasury Operations</text>
+  <text x="970" y="203" font-size="8" fill="#475569">Entity cash map / LCR-NSFR</text>
+  <line x1="960" y1="209" x2="1136" y2="209" stroke="#1a1400" stroke-width="1"/>
+  <text x="970" y="223" font-size="8.5" font-weight="600" fill="#fbbf24">Tab 3  CPT Risk</text>
+  <text x="970" y="234" font-size="8" fill="#475569">CS01 / DV01 / hedge eff / JtD</text>
+  <line x1="960" y1="240" x2="1136" y2="240" stroke="#1a1400" stroke-width="1"/>
+  <text x="970" y="254" font-size="8.5" font-weight="600" fill="#fbbf24">Tab 4  EOD Attribution</text>
+  <text x="970" y="265" font-size="8" fill="#475569">FTP waterfall / 4-factor bridge</text>
+  <line x1="960" y1="271" x2="1136" y2="271" stroke="#1a1400" stroke-width="1"/>
+  <text x="970" y="285" font-size="8.5" font-weight="600" fill="#fbbf24">Tab 5  Monitor - Diagnose - Act</text>
+  <text x="970" y="296" font-size="8" fill="#475569">Alert queue / drill to action</text>
+
+  <rect x="960" y="312" width="176" height="16" rx="3" fill="#1a1400"/>
+  <text x="1048" y="323" text-anchor="middle" font-size="8.5" font-weight="600" fill="#f2bf0f">DRILLTHROUGH</text>
+
+  <rect x="960" y="330" width="176" height="48" rx="3" fill="#0a0a14" stroke="#ca8a04" stroke-width="1"/>
+  <text x="970" y="346" font-size="8.5" fill="#64748b">Position Detail: Desk to Portfolio</text>
+  <text x="970" y="358" font-size="8.5" fill="#64748b">FTP Waterfall: component breakdown</text>
+  <text x="970" y="370" font-size="8.5" fill="#64748b">Instrument Risk: issuer / country</text>
+
+  <rect x="960" y="384" width="176" height="16" rx="3" fill="#1a1400"/>
+  <text x="1048" y="395" text-anchor="middle" font-size="8.5" font-weight="600" fill="#f2bf0f">CONNECTIVITY + ALERTS</text>
+
+  <rect x="960" y="402" width="176" height="74" rx="3" fill="#0a0a14" stroke="#ca8a04" stroke-width="1"/>
+  <text x="970" y="417" font-size="8.5" fill="#64748b">On-premises data gateway</text>
+  <text x="970" y="430" font-size="8.5" fill="#64748b">Teams webhook - alert cards</text>
+  <text x="970" y="443" font-size="8.5" fill="#64748b">Email subscriptions (exec daily)</text>
+  <text x="970" y="456" font-size="8.5" fill="#64748b">RLS inherited from SSAS model</text>
+  <text x="970" y="469" font-size="8.5" fill="#64748b">Workspaces: Prod / UAT</text>
+
+  <text x="1048" y="496" text-anchor="middle" font-size="8.5" fill="#ca8a04">Live connection / no pbix import</text>
+
+  <!-- SQL AGENT BAR -->
+  <rect x="204" y="542" width="942" height="86" rx="6" fill="#1a0a2e" stroke="#7c3aed" stroke-width="1.5"/>
+  <rect x="204" y="542" width="942" height="24" rx="6" fill="#2e1065"/>
+  <rect x="204" y="554" width="942" height="12" fill="#2e1065"/>
+  <text x="675" y="558" text-anchor="middle" font-size="11" font-weight="600" fill="#c4b5fd" letter-spacing="0.07em">SQL AGENT -- SCHEDULING &amp; ORCHESTRATION (optional, recommended)</text>
+
+  <text x="224" y="584" font-size="9" font-weight="600" fill="#a78bfa">SoD chain</text>
+  <text x="224" y="597" font-size="8.5" fill="#64748b">06:00 ET: MarketData to Positions to Funding to SSAS refresh</text>
+
+  <text x="530" y="584" font-size="9" font-weight="600" fill="#a78bfa">Intraday loop</text>
+  <text x="530" y="597" font-size="8.5" fill="#64748b">Every 15 min: Positions + Cash / retry x3 on fail</text>
+
+  <text x="834" y="584" font-size="9" font-weight="600" fill="#a78bfa">EoD chain</text>
+  <text x="834" y="597" font-size="8.5" fill="#64748b">19:00 ET: FTP to Risk to LCR to Recon to SSAS refresh</text>
+
+  <text x="224" y="617" font-size="8.5" fill="#64748b">Failure: SMTP + Teams webhook to Dual-Hat Head / 3 retries at 5-min intervals</text>
+  <text x="834" y="617" font-size="8.5" fill="#64748b">Sun 02:00: PKG_Ref_Data to SCD 2 upserts to DIM rebuild</text>
+
+  <!-- FLOW ARROWS between columns -->
+  <line x1="188" y1="262" x2="202" y2="262" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+
+  <line x1="416" y1="262" x2="430" y2="262" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+
+  <line x1="700" y1="244" x2="714" y2="244" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arr-imp)"/>
+  <text x="707" y="238" text-anchor="middle" font-size="7.5" fill="#7dd3fc">Import</text>
+
+  <line x1="700" y1="280" x2="714" y2="280" stroke="#f2bf0f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr-dq)"/>
+  <text x="707" y="296" text-anchor="middle" font-size="7.5" fill="#f2bf0f">DQ live</text>
+
+  <line x1="934" y1="262" x2="948" y2="262" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- SQL Agent connectors upward -->
+  <line x1="310" y1="524" x2="310" y2="542" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="566" y1="524" x2="566" y2="542" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="825" y1="524" x2="825" y2="542" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- SIDE LEGEND -->
+  <rect x="1162" y="14" width="182" height="400" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="1253" y="34" text-anchor="middle" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.06em">DATA FRESHNESS SLA</text>
+  <line x1="1172" y1="40" x2="1334" y2="40" stroke="#1e293b" stroke-width="1"/>
+
+  <rect x="1172" y="48" width="162" height="56" rx="3" fill="#0c2040" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="1253" y="64" text-anchor="middle" font-size="9" font-weight="600" fill="#7dd3fc">Start-of-Day</text>
+  <text x="1253" y="77" text-anchor="middle" font-size="8.5" fill="#64748b">06:00-08:00 ET</text>
+  <text x="1253" y="90" text-anchor="middle" font-size="8.5" fill="#64748b">Positions ready &lt; 07:30</text>
+  <text x="1253" y="100" text-anchor="middle" font-size="8" fill="#475569">PBI refreshed by 08:00</text>
+
+  <rect x="1172" y="112" width="162" height="56" rx="3" fill="#1c1200" stroke="#ca8a04" stroke-width="1"/>
+  <text x="1253" y="128" text-anchor="middle" font-size="9" font-weight="600" fill="#fcd34d">Intraday</text>
+  <text x="1253" y="141" text-anchor="middle" font-size="8.5" fill="#64748b">15-min SSIS cycle</text>
+  <text x="1253" y="154" text-anchor="middle" font-size="8.5" fill="#64748b">SSAS DQ: &lt; 5s query</text>
+  <text x="1253" y="164" text-anchor="middle" font-size="8" fill="#475569">Dashboard lag &lt; 1 min</text>
+
+  <rect x="1172" y="176" width="162" height="56" rx="3" fill="#0c2040" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="1253" y="192" text-anchor="middle" font-size="9" font-weight="600" fill="#7dd3fc">End-of-Day</text>
+  <text x="1253" y="205" text-anchor="middle" font-size="8.5" fill="#64748b">19:00-21:00 ET</text>
+  <text x="1253" y="218" text-anchor="middle" font-size="8.5" fill="#64748b">FTP + LCR final 21:00</text>
+  <text x="1253" y="228" text-anchor="middle" font-size="8" fill="#475569">SSAS refresh &lt; 30 min</text>
+
+  <rect x="1172" y="240" width="162" height="42" rx="3" fill="#071a0e" stroke="#14532d" stroke-width="1"/>
+  <text x="1253" y="256" text-anchor="middle" font-size="9" font-weight="600" fill="#4ade80">Weekly Ref Data</text>
+  <text x="1253" y="269" text-anchor="middle" font-size="8.5" fill="#64748b">Sun 02:00 ET</text>
+  <text x="1253" y="279" text-anchor="middle" font-size="8" fill="#475569">SCD 2 upserts + rebuild</text>
+
+  <line x1="1172" y1="292" x2="1334" y2="292" stroke="#1e293b" stroke-width="1"/>
+  <text x="1253" y="308" text-anchor="middle" font-size="8.5" font-weight="600" fill="#94a3b8">ENVIRONMENT</text>
+  <rect x="1172" y="316" width="162" height="86" rx="3" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="1182" y="332" font-size="8.5" fill="#64748b">SQL Server 2019+</text>
+  <text x="1182" y="346" font-size="8.5" fill="#64748b">SSIS 2019 (SSISDB)</text>
+  <text x="1182" y="360" font-size="8.5" fill="#64748b">SSAS Tabular 2019 (1600)</text>
+  <text x="1182" y="374" font-size="8.5" fill="#64748b">Power BI Premium / Fabric</text>
+  <text x="1182" y="388" font-size="8.5" fill="#64748b">On-prem gateway (PBI)</text>
+  <text x="1182" y="402" font-size="8.5" fill="#64748b">SQL Agent on DW server</text>
+
+  <!-- Arrow key -->
+  <rect x="1162" y="420" width="182" height="104" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="1253" y="438" text-anchor="middle" font-size="8.5" font-weight="600" fill="#94a3b8">ARROW KEY</text>
+  <line x1="1172" y1="444" x2="1344" y2="444" stroke="#1e293b" stroke-width="1"/>
+  <line x1="1178" y1="458" x2="1214" y2="458" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="1222" y="462" font-size="8.5" fill="#64748b">Batch / bulk load</text>
+  <line x1="1178" y1="476" x2="1214" y2="476" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arr-imp)"/>
+  <text x="1222" y="480" font-size="8.5" fill="#7dd3fc">Import refresh</text>
+  <line x1="1178" y1="494" x2="1214" y2="494" stroke="#f2bf0f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr-dq)"/>
+  <text x="1222" y="498" font-size="8.5" fill="#f2bf0f">DirectQuery (live)</text>
+  <line x1="1178" y1="512" x2="1214" y2="512" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="1222" y="516" font-size="8.5" fill="#a78bfa">SQL Agent trigger</text>
+
+  <text x="680" y="645" text-anchor="middle" font-size="9.5" fill="#334155">Demo Bank &amp; Co. / TreasuryDW / SQL Server to SSIS to SSAS Tabular to Power BI / INTERNAL</text>
+</svg>
+</div>
+
+<h3>Implementation Notes by Layer</h3>
+<table>
+  <thead>
+    <tr><th>Layer</th><th>Technology</th><th>Key Design Decisions</th><th>Latency SLA</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Source Systems</strong></td>
+      <td>Bloomberg B-PIPE / TMS (AIM, Murex) / Risk Engine / FTP Engine / GL / EDM</td>
+      <td>8 distinct feeds. Raw data lands in STG.* without transformation. SSIS owns all type-casting and validation. No direct source-to-DIM writes.</td>
+      <td>60 s RT push / EOD file drop</td>
+    </tr>
+    <tr>
+      <td><strong>SSIS ETL</strong></td>
+      <td>SQL Server Integration Services 2019 (SSISDB catalogue)</td>
+      <td>10 packages across 4 schedule windows. Intraday packages upsert via MERGE key. SCD Type 2 handled in PKG_Ref_Data via usp_SCD2Upsert. Error rows written to STG.ErrorLog; SQL Agent fires alert on failure.</td>
+      <td>SoD 06:00-08:00 / 15-min intraday / EoD 19:00-21:00 / Sun 02:00</td>
+    </tr>
+    <tr>
+      <td><strong>SQL Server DW</strong></td>
+      <td>TreasuryDW / 4 schemas (STG / DIM / FCT / CFG)</td>
+      <td>Fact tables use Clustered Columnstore Index (CCI) for analytical query speed. IsCurrentSnapshot BIT partitions SSAS query modes. CFG.MetricThreshold drives Monitor-Diagnose-Act as data, not hardcoded logic.</td>
+      <td>Write latency &lt; 5 min post-SSIS</td>
+    </tr>
+    <tr>
+      <td><strong>SSAS Tabular</strong></td>
+      <td>Analysis Services 2019 / Compatibility 1600</td>
+      <td>Hybrid mode: Import for EOD/historical (fits in RAM, fast aggregations); DirectQuery partition for IsCurrentSnapshot=1 rows so intraday data is always live. Calculation Groups handle scenario switching and time intelligence. RLS enforced at model level, inherited by Power BI.</td>
+      <td>Import refresh &lt; 30 min post-SSIS / DQ query &lt; 5 s</td>
+    </tr>
+    <tr>
+      <td><strong>Power BI</strong></td>
+      <td>Power BI Premium or Fabric / On-premises gateway</td>
+      <td>Live connection to SSAS -- no data import into .pbix. All measures, RLS, and hierarchies come from the Tabular model. Teams webhook sends alert cards from FCT.ActionItem. Two workspaces: Prod and UAT for release management.</td>
+      <td>Dashboard lag &lt; 1 min (DQ) / &lt; 30 min post-refresh (Import)</td>
+    </tr>
+    <tr>
+      <td><strong>SQL Agent</strong> (optional)</td>
+      <td>SQL Server Agent / jobs on DW server</td>
+      <td>Chains SSIS package execution in dependency order. Retries x3 at 5-min intervals before alerting. Fires SMTP + Teams on failure. Can be replaced by Azure Data Factory triggers if migrating to cloud.</td>
+      <td>Job start +/- 30 s of scheduled time</td>
+    </tr>
+  </tbody>
+</table>
+
+</div><!-- /wrap -->
+
+<div class="footer">
+  Demo Bank &amp; Co. &middot; CPT and Treasury Analytics Program &middot; Galaxy Schema, Dimension Specification &amp; Implementation Architecture v1.1 &middot; June 2026<br>
+  INTERNAL CONFIDENTIAL &mdash; Not for distribution. Illustrative schema; not representative of actual data architecture.
+</div>
+</body>
+</html>
